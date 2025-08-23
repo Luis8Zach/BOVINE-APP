@@ -1,0 +1,597 @@
+.login-content {
+  --background: linear-gradient(135deg, #377d6c 0%, #1e9c4f 100%);
+}
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+// Header Section
+.header-section {
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+
+  .logo-container {
+    margin-bottom: 15px;
+
+    .cow-icon {
+      font-size: 3rem;
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 15px;
+      border-radius: 50%;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+  }
+
+  .app-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    margin: 0 0 5px 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+  }
+
+  .app-subtitle {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-weight: 300;
+    transition: all 0.3s ease;
+  }
+}
+
+// Cow Image
+.cow-image-container {
+  text-align: center;
+  margin: 30px 0 40px 0;
+  padding: 20px;
+  transition: all 0.3s ease;
+
+  .cow-image {
+    width: 220px;
+    height: 220px;
+    border-radius: 25px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    padding: 20px;
+    transition: all 0.3s ease;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+    }
+  }
+}
+
+// Form Container
+.login-form-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+
+  .form-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 25px;
+    padding: 30px 25px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+  }
+}
+
+// Saved Credentials
+.saved-credentials {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f9f0 100%);
+  border: 2px solid #2dd36f;
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 20px;
+
+  .credentials-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    font-weight: 600;
+
+    .key-icon {
+      color: #f39c12;
+      font-size: 1.1rem;
+    }
+  }
+
+  .saved-user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+
+      .user-icon {
+        color: #3498db;
+        font-size: 1.2rem;
+      }
+
+      .user-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .username {
+          font-size: 0.85rem;
+          color: #2c3e50;
+        }
+
+        .password-hint {
+          font-size: 0.8rem;
+          color: #7f8c8d;
+        }
+      }
+    }
+
+    ion-button {
+      --padding-start: 12px;
+      --padding-end: 12px;
+      --padding-top: 6px;
+      --padding-bottom: 6px;
+      font-size: 0.8rem;
+      height: auto;
+    }
+  }
+}
+
+// Input Section
+.input-section {
+  margin-bottom: 20px;
+
+  .input-group {
+    margin-bottom: 15px;
+
+    .input-container {
+      position: relative;
+      background: #f8f9fa;
+      border-radius: 15px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+
+      &:focus-within {
+        border-color: #2dd36f;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(45, 211, 111, 0.1);
+      }
+
+      .input-icon {
+        color: #7f8c8d;
+        font-size: 1.2rem;
+        margin-right: 10px;
+        transition: color 0.3s ease;
+      }
+
+      &:focus-within .input-icon {
+        color: #2dd36f;
+      }
+
+      .custom-input {
+        --background: transparent;
+        --color: #2c3e50;
+        --placeholder-color: #95a5a6;
+        --padding-start: 0;
+        --padding-end: 0;
+        --padding-top: 15px;
+        --padding-bottom: 15px;
+        font-size: 1rem;
+        flex: 1;
+
+        &.filled {
+          --color: #2c3e50;
+          font-weight: 500;
+        }
+      }
+
+      .password-toggle {
+        --color: #7f8c8d;
+        --padding-start: 5px;
+        --padding-end: 5px;
+        margin: 0;
+
+        &:hover {
+          --color: #2dd36f;
+        }
+      }
+    }
+  }
+}
+
+// Form Options
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+
+  .remember-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .custom-checkbox {
+      --size: 18px;
+      --checkmark-color: white;
+      --background-checked: #2dd36f;
+      --border-color-checked: #2dd36f;
+    }
+
+    .remember-text {
+      font-size: 0.9rem;
+      color: #2c3e50;
+    }
+  }
+
+  .forgot-password {
+    font-size: 0.9rem;
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// Login Button
+.login-button {
+  --background: linear-gradient(135deg, #2dd36f 0%, #1e9c4f 100%);
+  --background-hover: linear-gradient(135deg, #1e9c4f 0%, #16803d 100%);
+  --color: white;
+  --border-radius: 15px;
+  --padding-top: 15px;
+  --padding-bottom: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(45, 211, 111, 0.4);
+
+  &:not([disabled]):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(45, 211, 111, 0.5);
+  }
+
+  &[disabled] {
+    --background: #bdc3c7;
+    --color: #7f8c8d;
+    box-shadow: none;
+  }
+}
+
+// Register Section
+.register-section {
+  text-align: center;
+
+  .register-text {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-right: 5px;
+  }
+
+  .register-link {
+    font-size: 0.9rem;
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// Footer Section
+.footer-section {
+  text-align: center;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+
+  .ranch-name {
+    font-size: 1rem;
+    font-weight: bold;
+    color: white;
+    margin: 0 0 5px 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  .version-info {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+  }
+}
+
+// ===== RESPONSIVE DESIGN OPTIMIZADO =====
+
+// TABLETS EN ORIENTACIÓN HORIZONTAL (LANDSCAPE)
+@media (min-width: 768px) and (orientation: landscape) {
+  .login-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 40px;
+    padding: 30px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  // Sección izquierda: Header + Imagen
+  .header-section {
+    margin: 0;
+    order: 1;
+    flex: 1;
+    max-width: 350px;
+
+    .app-title {
+      font-size: 3.2rem;
+      margin-bottom: 10px;
+    }
+
+    .app-subtitle {
+      font-size: 1.3rem;
+      margin-bottom: 30px;
+    }
+
+    .cow-icon {
+      font-size: 3.5rem !important;
+      padding: 18px !important;
+    }
+  }
+
+  .cow-image-container {
+    margin: 0;
+    padding: 0;
+    order: 2;
+
+    .cow-image {
+      width: 280px;
+      height: 280px;
+      padding: 25px;
+    }
+  }
+
+  // Sección derecha: Formulario
+  .login-form-container {
+    order: 3;
+    flex: 1;
+    max-width: 450px;
+
+    .form-card {
+      max-width: none;
+      width: 100%;
+      padding: 35px 30px;
+    }
+  }
+
+  .footer-section {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+  }
+}
+
+// TABLETS EN ORIENTACIÓN VERTICAL (PORTRAIT)
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .login-container {
+    padding: 40px;
+    max-width: 600px;
+    margin: 0 auto;
+    justify-content: center;
+  }
+
+  .header-section {
+    margin-top: 40px;
+    margin-bottom: 30px;
+
+    .app-title {
+      font-size: 3.5rem;
+    }
+
+    .app-subtitle {
+      font-size: 1.4rem;
+    }
+
+    .cow-icon {
+      font-size: 4rem;
+      padding: 20px;
+    }
+  }
+
+  .cow-image-container {
+    margin: 30px 0 40px 0;
+    padding: 25px;
+
+    .cow-image {
+      width: 260px;
+      height: 260px;
+      padding: 25px;
+    }
+  }
+
+  .form-card {
+    max-width: 500px;
+    padding: 35px 30px;
+  }
+
+  .input-container {
+    padding: 0 18px;
+
+    .custom-input {
+      --padding-top: 16px;
+      --padding-bottom: 16px;
+      font-size: 1.1rem;
+    }
+
+    .input-icon {
+      font-size: 1.3rem;
+      margin-right: 12px;
+    }
+  }
+
+  .login-button {
+    --padding-top: 16px;
+    --padding-bottom: 16px;
+    font-size: 1.2rem;
+  }
+}
+
+// TABLETS GRANDES (iPad Pro y similares)
+@media (min-width: 1024px) {
+  .login-container {
+    gap: 60px;
+    padding: 40px 80px;
+  }
+
+  .header-section {
+    .app-title {
+      font-size: 3.8rem;
+    }
+
+    .app-subtitle {
+      font-size: 1.5rem;
+    }
+  }
+
+  .cow-image-container .cow-image {
+    width: 320px;
+    height: 320px;
+    padding: 30px;
+  }
+
+  .form-card {
+    max-width: 500px;
+    padding: 45px 40px;
+  }
+}
+
+// AJUSTES PARA PANTALLAS PEQUEÑAS (Móviles)
+@media (max-width: 767px) {
+  .login-container {
+    padding: 15px;
+  }
+
+  .header-section {
+    margin-top: 20px;
+    margin-bottom: 15px;
+
+    .app-title {
+      font-size: 2.2rem;
+    }
+
+    .app-subtitle {
+      font-size: 1rem;
+    }
+
+    .cow-icon {
+      font-size: 2.5rem;
+      padding: 12px;
+    }
+  }
+
+  .cow-image-container {
+    margin: 20px 0 25px 0;
+    padding: 15px;
+
+    .cow-image {
+      width: 180px;
+      height: 180px;
+      padding: 15px;
+    }
+  }
+
+  .form-card {
+    padding: 25px 20px;
+  }
+
+  .form-options {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}
+
+// AJUSTES PARA PANTALLAS MUY PEQUEÑAS EN ALTURA
+@media (max-height: 600px) and (orientation: landscape) {
+  .login-container {
+    gap: 30px;
+    padding: 20px 40px;
+  }
+
+  .header-section {
+    .app-title {
+      font-size: 2.5rem;
+    }
+
+    .app-subtitle {
+      font-size: 1.1rem;
+    }
+
+    .cow-icon {
+      font-size: 2.5rem !important;
+      padding: 12px !important;
+    }
+  }
+
+  .cow-image-container .cow-image {
+    width: 200px;
+    height: 200px;
+    padding: 15px;
+  }
+
+  .form-card {
+    padding: 25px 20px;
+  }
+
+  .footer-section {
+    bottom: 10px;
+    
+    .ranch-name {
+      font-size: 0.9rem;
+    }
+
+    .version-info {
+      font-size: 0.7rem;
+    }
+  }
+}
+
+// TRANSICIONES SUAVES ENTRE ORIENTACIONES
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}

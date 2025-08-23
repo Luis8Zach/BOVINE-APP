@@ -1,0 +1,453 @@
+.dashboard-content {
+  --background: linear-gradient(135deg, #377d6c 0%, #1e9c4f 100%);
+  padding: 10px;
+}
+
+// Header personalizado
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 10px;
+
+  .header-left {
+    .app-logo {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      letter-spacing: 1px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 8px 16px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+    }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    .ranch-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+
+      .ranch-name {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      }
+
+      .animal-count {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+      }
+    }
+
+    .logout-btn {
+      font-size: 1.4rem;
+      color: white;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+  }
+}
+
+// Contenedor principal
+.main-container {
+  background: white;
+  border-radius: 25px;
+  padding: 25px;
+  margin: 10px 5px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  min-height: calc(100vh - 140px);
+}
+
+// Contenedor de estadísticas
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+
+  .stat-card {
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: none;
+    transition: all 0.3s ease;
+    overflow: hidden;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    ion-card-content {
+      padding: 20px;
+      text-align: center;
+
+      .stat-content {
+        .stat-number {
+          font-size: 2.5rem;
+          font-weight: 900;
+          margin-bottom: 8px;
+          line-height: 1;
+
+          &.total {
+            color: #2c3e50;
+          }
+
+          &.hembras {
+            color: #e91e63;
+          }
+
+          &.machos {
+            color: #3498db;
+          }
+
+          &.reproductores {
+            color: #377d6c;
+          }
+        }
+
+        .stat-label {
+          font-size: 0.9rem;
+          color: #7f8c8d;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+  }
+}
+
+// Sección de eventos
+.events-section {
+  .events-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f1c40f;
+
+    .events-icon {
+      font-size: 1.5rem;
+      color: #f39c12;
+    }
+
+    .events-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0;
+    }
+  }
+
+  .events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+
+    .event-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 15px;
+      border-left: 4px solid #f39c12;
+      transition: all 0.3s ease;
+      cursor: pointer;
+
+      &:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .event-indicator {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+        ion-icon {
+          font-size: 1.4rem;
+        }
+      }
+
+      .event-content {
+        flex: 1;
+
+        .event-main {
+          .event-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0 0 5px 0;
+            line-height: 1.3;
+          }
+
+          .event-description {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin: 0;
+            line-height: 1.4;
+          }
+        }
+      }
+
+      .event-date-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+
+        .event-date {
+          font-size: 0.9rem;
+          font-weight: 700;
+          color: #2c3e50;
+        }
+
+        .event-status {
+          font-size: 0.7rem;
+          padding: 4px 8px;
+          border-radius: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+      }
+    }
+  }
+}
+
+// ===== RESPONSIVE DESIGN =====
+
+// Móviles pequeños
+@media (max-width: 480px) {
+  .dashboard-content {
+    padding: 5px;
+  }
+
+  .header-content {
+    padding: 0 5px;
+
+    .header-left .app-logo {
+      font-size: 1.4rem;
+      padding: 6px 12px;
+    }
+
+    .header-right {
+      gap: 10px;
+
+      .ranch-info {
+        .ranch-name {
+          font-size: 0.8rem;
+        }
+
+        .animal-count {
+          font-size: 0.7rem;
+        }
+      }
+
+      .logout-btn {
+        font-size: 1.2rem;
+      }
+    }
+  }
+
+  .main-container {
+    padding: 15px;
+    margin: 5px 2px;
+    border-radius: 15px;
+  }
+
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+
+    .stat-card ion-card-content {
+      padding: 15px;
+
+      .stat-content {
+        .stat-number {
+          font-size: 2rem;
+        }
+
+        .stat-label {
+          font-size: 0.8rem;
+        }
+      }
+    }
+  }
+
+  .events-section {
+    .events-header {
+      .events-icon {
+        font-size: 1.3rem;
+      }
+
+      .events-title {
+        font-size: 1.1rem;
+      }
+    }
+
+    .events-list {
+      gap: 12px;
+
+      .event-item {
+        padding: 15px;
+        gap: 12px;
+
+        .event-indicator {
+          width: 40px;
+          height: 40px;
+
+          ion-icon {
+            font-size: 1.2rem;
+          }
+        }
+
+        .event-content .event-main {
+          .event-title {
+            font-size: 0.9rem;
+          }
+
+          .event-description {
+            font-size: 0.8rem;
+          }
+        }
+
+        .event-date-status {
+          .event-date {
+            font-size: 0.8rem;
+          }
+
+          .event-status {
+            font-size: 0.65rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Tablets
+@media (min-width: 481px) and (max-width: 768px) {
+  .dashboard-content {
+    padding: 8px;
+  }
+
+  .main-container {
+    padding: 20px;
+    margin: 8px 5px;
+  }
+
+  .stats-container {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+}
+
+// Desktop
+@media (min-width: 769px) {
+  .dashboard-content {
+    padding: 15px;
+  }
+
+  .main-container {
+    padding: 30px;
+    margin: 15px 10px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .stats-container {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 40px;
+
+    .stat-card ion-card-content {
+      padding: 25px;
+
+      .stat-content {
+        .stat-number {
+          font-size: 3rem;
+        }
+
+        .stat-label {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+
+  .events-section {
+    .events-header {
+      .events-icon {
+        font-size: 1.6rem;
+      }
+
+      .events-title {
+        font-size: 1.4rem;
+      }
+    }
+
+    .events-list {
+      gap: 18px;
+
+      .event-item {
+        padding: 25px;
+        gap: 18px;
+
+        .event-indicator {
+          width: 55px;
+          height: 55px;
+
+          ion-icon {
+            font-size: 1.5rem;
+          }
+        }
+
+        .event-content .event-main {
+          .event-title {
+            font-size: 1.1rem;
+          }
+
+          .event-description {
+            font-size: 0.9rem;
+          }
+        }
+      }
+    }
+  }
+}
+

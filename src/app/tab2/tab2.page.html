@@ -1,17 +1,262 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
+  <ion-toolbar color="success">
     <ion-title>
-      Tab 2
+      <div class="header-content">
+        <div class="header-left">
+          <strong>AGRODATA</strong>
+        </div>
+        <div class="header-right">
+          <span>RANCHO LA VAQUITA FELIZ</span>
+          <span class="animal-count">{{ totalAnimals }} ANIMALES</span>
+          <ion-icon name="log-out-outline" (click)="logout()" class="logout-btn"></ion-icon>
+        </div>
+      </div>
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="animals-content">
+  <!-- Contenedor principal con bordes redondeados -->
+  <div class="main-container">
+    
+    <!-- Barra de búsqueda y filtros -->
+    <div class="search-section">
+      <div class="search-row">
+        <ion-searchbar 
+          placeholder="Buscar por ID o SINIGA"
+          (ionInput)="onSearchChange($event)" 
+          [value]="searchTerm"
+          class="custom-searchbar">
+        </ion-searchbar>
+        
+        <ion-button 
+          [fill]="selectedSexFilter === 'Todos' ? 'solid' : 'outline'"
+          [color]="selectedSexFilter === 'Todos' ? 'primary' : 'medium'"
+          class="filter-button"
+          (click)="onSexFilterChange('Todos')">
+          Todos
+        </ion-button>
+        
+        <ion-button 
+          color="success" 
+          class="add-button" 
+          (click)="openAddModal()"
+          style="--color: #ffffff; color: #ffffff;">
+          <ion-icon 
+            name="add-outline" 
+            slot="start" 
+            style="color: #ffffff !important;">
+          </ion-icon>
+          <span style="color: #ffffff !important; font-weight: 600;">AGREGAR</span>
+        </ion-button>
+      </div>
+    </div>
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+    <!-- Filtros de sexo -->
+    <div class="sex-filters">
+      <ion-button 
+        [fill]="selectedSexFilter === 'Hembra' ? 'solid' : 'outline'"
+        [color]="selectedSexFilter === 'Hembra' ? 'success' : 'medium'"
+        (click)="onSexFilterChange('Hembra')"
+        class="sex-filter-btn">
+        <ion-icon name="female-outline" slot="start"></ion-icon>
+        Hembras ({{ totalHembras }})
+      </ion-button>
+      
+      <ion-button 
+        [fill]="selectedSexFilter === 'Macho' ? 'solid' : 'outline'"
+        [color]="selectedSexFilter === 'Macho' ? 'tertiary' : 'medium'"
+        (click)="onSexFilterChange('Macho')"
+        class="sex-filter-btn">
+        <ion-icon name="male-outline" slot="start"></ion-icon>
+        Machos ({{ totalMachos }})
+      </ion-button>
+    </div>
+
+    <!-- Tabla de animales -->
+    <div class="table-container">
+      <!-- Header de la tabla -->
+      <div class="table-header">
+        <div class="header-cell">ID</div>
+        <div class="header-cell">SINIGA</div>
+        <div class="header-cell">Madre</div>
+        <div class="header-cell">Padre</div>
+        <div class="header-cell">F. Nacimiento</div>
+        <div class="header-cell">Edad</div>
+        <div class="header-cell">Estado</div>
+        <div class="header-cell">Observaciones</div>
+      </div>
+
+      <!-- Cuerpo de la tabla -->
+      <div class="table-body">
+        <div *ngFor="let animal of filteredAnimals" class="table-row" (click)="openEditModal(animal)">
+          <div class="body-cell">{{ animal.id }}</div>
+          <div class="body-cell">{{ animal.siniga }}</div>
+          <div class="body-cell">{{ animal.madre || '-' }}</div>
+          <div class="body-cell">{{ animal.padre || '-' }}</div>
+          <div class="body-cell">{{ formatDate(animal.fechaNacimiento) }}</div>
+          <div class="body-cell">{{ animal.edad }}</div>
+          <div class="body-cell">
+            <ion-badge [color]="getStatusColor(animal.estado)" class="status-badge">
+              {{ animal.estado }}
+            </ion-badge>
+          </div>
+          <div class="body-cell obs-cell">{{ animal.observaciones || '-' }}</div>
+        </div>
+      </div>
+
+      <!-- Mensaje cuando no hay resultados -->
+      <div *ngIf="filteredAnimals.length === 0" class="no-results">
+        <ion-icon name="search-outline"></ion-icon>
+        <h3>No se encontraron animales</h3>
+        <p>Intenta cambiar los filtros de búsqueda</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para agregar/editar animal -->
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="success">
+          <ion-title>{{ isEditMode ? 'Editar Animal' : 'Registrar Animal' }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeModal()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      
+      <ion-content class="modal-content">
+        <div class="form-container">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">ID *</ion-label>
+                  <ion-input 
+                    [(ngModel)]="currentAnimal.id" 
+                    placeholder="Ej: H001"
+                    [readonly]="isEditMode">
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">SINIGA *</ion-label>
+                  <ion-input 
+                    [(ngModel)]="currentAnimal.siniga" 
+                    placeholder="Ej: MX-001-2024">
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+
+            <ion-row>
+              <ion-col size="12">
+                <ion-item>
+                  <ion-label position="stacked">Nombre *</ion-label>
+                  <ion-input 
+                    [(ngModel)]="currentAnimal.nombre" 
+                    placeholder="Nombre del animal">
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+
+            <ion-row>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Madre</ion-label>
+                  <ion-input 
+                    [(ngModel)]="currentAnimal.madre" 
+                    placeholder="Nombre de la madre">
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Padre</ion-label>
+                  <ion-input 
+                    [(ngModel)]="currentAnimal.padre" 
+                    placeholder="Nombre del padre">
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+
+            <ion-row>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Fecha de Nacimiento *</ion-label>
+                  <ion-input 
+                    type="date"
+                    [(ngModel)]="currentAnimal.fechaNacimiento"
+                    (ionChange)="onBirthDateChange()">
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Sexo *</ion-label>
+                  <ion-select [(ngModel)]="currentAnimal.sexo">
+                    <ion-select-option value="Hembra">Hembra</ion-select-option>
+                    <ion-select-option value="Macho">Macho</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+
+            <ion-row>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Estado</ion-label>
+                  <ion-select [(ngModel)]="currentAnimal.estado">
+                    <ion-select-option value="Excelente">Excelente</ion-select-option>
+                    <ion-select-option value="Bueno">Bueno</ion-select-option>
+                    <ion-select-option value="Regular">Regular</ion-select-option>
+                    <ion-select-option value="Enfermo">Enfermo</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Peso (kg)</ion-label>
+                  <ion-input 
+                    type="number"
+                    [(ngModel)]="currentAnimal.peso" 
+                    placeholder="0">
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+
+            <ion-row>
+              <ion-col size="12">
+                <ion-item>
+                  <ion-label position="stacked">Observaciones</ion-label>
+                  <ion-textarea 
+                    [(ngModel)]="currentAnimal.observaciones" 
+                    placeholder="Observaciones adicionales..."
+                    rows="3">
+                  </ion-textarea>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+          <div class="modal-buttons">
+            <ion-button 
+              expand="block" 
+              color="success" 
+              (click)="saveAnimal()">
+              <ion-icon name="save-outline" slot="start"></ion-icon>
+              {{ isEditMode ? 'Actualizar' : 'Registrar' }}
+            </ion-button>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

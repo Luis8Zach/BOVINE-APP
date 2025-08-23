@@ -1,0 +1,119 @@
+<ion-content class="login-content">
+  <div class="login-container">
+    <!-- Header con logo y título -->
+    <div class="header-section">
+      <div class="logo-container">
+        <div class="cow-icon">
+          🐄
+        </div>
+      </div>
+      <h1 class="app-title">Agrodata</h1>
+      <p class="app-subtitle">Sistema de Gestión Ganadera</p>
+    </div>
+
+    <!-- Imagen de vaca -->
+    <div class="cow-image-container">
+      <img src="../../../assets/img/vaca.gif" alt="Vaca" class="cow-image">
+    </div>
+
+    <!-- Formulario de login -->
+    <div class="login-form-container">
+      <div class="form-card">
+        <!-- Credenciales guardadas (opcional) -->
+        <div class="saved-credentials" *ngIf="hasSavedCredentials">
+          <div class="credentials-header">
+            <ion-icon name="key-outline" class="key-icon"></ion-icon>
+            <span>Credenciales de Acceso:</span>
+          </div>
+          <div class="saved-user-info">
+            <div class="user-info">
+              <ion-icon name="person-outline" class="user-icon"></ion-icon>
+              <div class="user-details">
+                <span class="username">Usuario: <strong>{{ savedUsername }}</strong></span>
+                <span class="password-hint">Contraseña: ••••••</span>
+              </div>
+            </div>
+            <ion-button fill="solid" size="small" color="tertiary" (click)="useSavedCredentials()">
+              Usar
+            </ion-button>
+          </div>
+        </div>
+
+        <!-- Campos de entrada -->
+        <div class="input-section">
+          <!-- Campo Usuario -->
+          <div class="input-group">
+            <div class="input-container">
+              <ion-icon name="person-outline" class="input-icon"></ion-icon>
+              <ion-input
+                [(ngModel)]="username"
+                placeholder="Usuario"
+                type="text"
+                class="custom-input"
+                [class.filled]="username"
+                (ionInput)="onInputChange()"
+              ></ion-input>
+            </div>
+          </div>
+
+          <!-- Campo Contraseña -->
+          <div class="input-group">
+            <div class="input-container">
+              <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+              <ion-input
+                [(ngModel)]="password"
+                placeholder="Contraseña"
+                [type]="showPassword ? 'text' : 'password'"
+                class="custom-input"
+                [class.filled]="password"
+                (ionInput)="onInputChange()"
+              ></ion-input>
+              <ion-button 
+                fill="clear"
+                size="small"
+                class="password-toggle"
+                (click)="togglePasswordVisibility()"
+              >
+                <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Opciones adicionales -->
+        <div class="form-options">
+          <div class="remember-section">
+            <ion-checkbox [(ngModel)]="rememberMe" class="custom-checkbox"></ion-checkbox>
+            <span class="remember-text">Recordarme</span>
+          </div>
+          <a href="#" class="forgot-password" (click)="forgotPassword($event)">
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
+
+        <!-- Botón de login -->
+        <ion-button 
+          expand="block"
+          class="login-button"
+          (click)="login()"
+          [disabled]="!username || !password"
+        >
+          <ion-icon name="log-in-outline" slot="start"></ion-icon>
+          Iniciar Sesión
+        </ion-button>
+
+        <!-- Enlace de registro -->
+        <div class="register-section">
+          <span class="register-text">¿No tienes cuenta?</span>
+          <a href="#" class="register-link" (click)="register($event)">Regístrate aquí</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-section">
+      <p class="ranch-name">RANCHO LA VAQUITA FELIZ</p>
+      <p class="version-info">Versión 1.0.0 - Modo Offline</p>
+    </div>
+  </div>
+</ion-content>

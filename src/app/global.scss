@@ -1,0 +1,205 @@
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/* ===== ESTILOS PERSONALIZADOS PARA ALERTAS ===== */
+.custom-alert {
+  --backdrop-opacity: 0.6;
+  
+  .alert-wrapper {
+    border-radius: 20px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden !important;
+    max-width: 400px !important;
+    margin: auto !important;
+    background: white !important;
+  }
+
+  .alert-head {
+    background: linear-gradient(135deg, #2dd36f 0%, #1e9c4f 100%) !important;
+    color: white !important;
+    padding: 20px !important;
+    text-align: center !important;
+
+    h2 {
+      color: white !important;
+      font-size: 1.3rem !important;
+      font-weight: 700 !important;
+      margin: 0 !important;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+    }
+  }
+
+  .alert-message {
+    padding: 25px 20px !important;
+    background: white !important;
+    color: #2c3e50 !important;
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+    text-align: center !important;
+    border-bottom: 1px solid #e9ecef !important;
+  }
+
+  .alert-button-group {
+    background: #f8f9fa !important;
+    padding: 15px !important;
+    display: flex !important;
+    gap: 10px !important;
+    justify-content: center !important;
+  }
+
+  .alert-button {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    padding: 12px 24px !important;
+    min-width: 100px !important;
+    text-transform: none !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.3s ease !important;
+    border: 2px solid transparent !important;
+    margin: 0 !important;
+
+    &:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    &.alert-button-cancel {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+      color: white !important;
+      border-color: #e74c3c !important;
+
+      &:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
+      }
+
+      &:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3) !important;
+      }
+    }
+
+    &.alert-button-confirm {
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%) !important;
+      color: white !important;
+      border-color: #27ae60 !important;
+
+      &:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%) !important;
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
+      }
+
+      &:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3) !important;
+      }
+    }
+  }
+}
+
+/* Responsive para móviles */
+@media (max-width: 480px) {
+  .custom-alert {
+    .alert-wrapper {
+      max-width: 320px !important;
+      margin: 20px !important;
+    }
+
+    .alert-head {
+      padding: 15px !important;
+
+      h2 {
+        font-size: 1.1rem !important;
+      }
+    }
+
+    .alert-message {
+      padding: 20px 15px !important;
+      font-size: 0.9rem !important;
+    }
+
+    .alert-button-group {
+      flex-direction: column !important;
+      padding: 12px !important;
+    }
+
+    .alert-button {
+      width: 100% !important;
+      min-width: auto !important;
+      margin-bottom: 8px !important;
+
+      &:last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+  }
+}
+
+/* Estilos adicionales para mejorar la apariencia general */
+ion-alert {
+  --backdrop-opacity: 0.6;
+}
+
+/* Asegurar que los botones de agregar tengan texto visible */
+ion-button.add-button {
+  --color: white !important;
+  color: white !important;
+}
+
+ion-button.add-button ion-icon {
+  color: white !important;
+}
+
+ion-button.add-button span {
+  color: white !important;
+}
+
+/* ===== ESTILOS PARA ION-SELECT ===== */
+ion-select {
+  --color: #2c3e50 !important;
+  --placeholder-color: #6c757d !important;
+  color: #2c3e50 !important;
+  
+  .select-text {
+    color: #2c3e50 !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+  }
+  
+  .select-placeholder {
+    color: #6c757d !important;
+    opacity: 0.7 !important;
+  }
+}
+
+ion-select-option {
+  --color: #2c3e50 !important;
+  color: #2c3e50 !important;
+}
+
+/* Asegurar que los inputs también tengan colores correctos */
+ion-input {
+  --color: #2c3e50 !important;
+  --placeholder-color: #6c757d !important;
+  color: #2c3e50 !important;
+}
+
+ion-textarea {
+  --color: #2c3e50 !important;
+  --placeholder-color: #6c757d !important;
+  color: #2c3e50 !important;
+}

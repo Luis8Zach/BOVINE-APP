@@ -1,0 +1,742 @@
+.animals-content {
+  --background: linear-gradient(135deg, #2dd36f 0%, #1e9c4f 100%);
+  padding: 10px;
+}
+
+// Header mejorado
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+
+  .header-left {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+
+    .animal-count {
+      font-weight: 600;
+    }
+
+    .logout-btn {
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+
+// Contenedor principal
+.main-container {
+  background: white;
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin: 5px 0;
+}
+
+// Sección de búsqueda
+.search-section {
+  margin-bottom: 15px;
+
+  .search-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    .custom-searchbar {
+      flex: 1;
+      min-width: 200px;
+      --background: #f8f9fa;
+      --border-radius: 12px;
+      --box-shadow: none;
+      --color: #2c3e50;
+    }
+
+    .filter-button {
+      --border-radius: 12px;
+      height: 44px;
+      min-width: 70px;
+      font-size: 0.9rem;
+    }
+
+    .add-button {
+      --border-radius: 12px;
+      height: 44px;
+      min-width: 100px;
+      font-weight: 600;
+      --color: white !important;
+      
+      .add-text {
+        color: white !important;
+        font-weight: 600 !important;
+      }
+
+      .add-icon {
+        color: white !important;
+      }
+
+      // Forzar el color del texto en todos los estados
+      ion-icon {
+        color: white !important;
+      }
+
+      // Asegurar que el texto sea visible
+      span {
+        color: white !important;
+      }
+    }
+  }
+}
+
+// Filtros de sexo
+.sex-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+
+  .sex-filter-btn {
+    --border-radius: 20px;
+    height: 36px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+// Tabla responsive
+.table-container {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e9ecef;
+  background: white;
+  overflow-x: auto;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 70px 120px 100px 100px 110px 80px 100px 1fr;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2px solid #dee2e6;
+  min-width: 800px;
+
+  .header-cell {
+    padding: 12px 8px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #343a40;
+    text-align: center;
+    border-right: 1px solid #dee2e6;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+}
+
+.table-body {
+  min-width: 800px;
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 70px 120px 100px 100px 110px 80px 100px 1fr;
+    border-bottom: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e8 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    &:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .body-cell {
+      padding: 12px 8px;
+      border-right: 1px solid #e9ecef;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #495057;
+      font-weight: 500;
+      text-align: center;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      &.obs-cell {
+        text-align: left;
+        justify-content: flex-start;
+        font-size: 0.75rem;
+        color: #6c757d;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .status-badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+    }
+  }
+}
+
+// Mensaje sin resultados
+.no-results {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+
+  ion-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+
+  h3 {
+    margin: 0 0 8px 0;
+    color: #495057;
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+}
+
+// Modal styles
+.modal-content {
+  --background: #f8f9fa;
+}
+
+.form-container {
+  padding: 20px;
+
+  ion-item {
+    --background: white;
+    --border-radius: 12px;
+    margin-bottom: 15px;
+    --padding-start: 15px;
+    --padding-end: 15px;
+  }
+
+  ion-label {
+    font-weight: 600;
+    color: #495057;
+  }
+}
+
+.modal-buttons {
+  padding: 20px 0;
+
+  ion-button {
+    --border-radius: 12px;
+    height: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+}
+
+// ===== ESTILOS PERSONALIZADOS PARA ALERTAS =====
+:host ::ng-deep .custom-alert {
+  --backdrop-opacity: 0.6;
+  
+  .alert-wrapper {
+    border-radius: 20px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden;
+    max-width: 400px;
+    margin: auto;
+  }
+
+  .alert-head {
+    background: linear-gradient(135deg, #2dd36f 0%, #1e9c4f 100%) !important;
+    color: white !important;
+    padding: 20px !important;
+    text-align: center;
+
+    h2 {
+      color: white !important;
+      font-size: 1.3rem !important;
+      font-weight: 700 !important;
+      margin: 0 !important;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+  }
+
+  .alert-message {
+    padding: 25px 20px !important;
+    background: white !important;
+    color: #2c3e50 !important;
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .alert-button-group {
+    background: #f8f9fa !important;
+    padding: 15px !important;
+    display: flex !important;
+    gap: 10px !important;
+    justify-content: center !important;
+  }
+
+  .alert-button {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    padding: 12px 24px !important;
+    min-width: 100px !important;
+    text-transform: none !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.3s ease !important;
+    border: 2px solid transparent !important;
+
+    &:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    &.alert-button-cancel {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+      color: white !important;
+      border-color: #e74c3c !important;
+
+      &:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
+      }
+
+      &:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3) !important;
+      }
+    }
+
+    &.alert-button-confirm {
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%) !important;
+      color: white !important;
+      border-color: #27ae60 !important;
+
+      &:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%) !important;
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
+      }
+
+      &:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3) !important;
+      }
+    }
+  }
+}
+
+// Estilos para ion-select
+ion-select {
+  --color: #2c3e50 !important;
+  --placeholder-color: #6c757d !important;
+  color: #2c3e50 !important;
+}
+
+ion-select-option {
+  --color: #2c3e50 !important;
+  color: #2c3e50 !important;
+}
+
+// Estilos específicos para el modal
+.modal-content {
+  ion-select {
+    --color: #2c3e50 !important;
+    --placeholder-color: #6c757d !important;
+    color: #2c3e50 !important;
+    
+    .select-text {
+      color: #2c3e50 !important;
+    }
+    
+    .select-placeholder {
+      color: #6c757d !important;
+    }
+  }
+  
+  ion-select-option {
+    --color: #2c3e50 !important;
+    color: #2c3e50 !important;
+  }
+  
+  // Asegurar que los inputs también tengan el color correcto
+  ion-input {
+    --color: #2c3e50 !important;
+    --placeholder-color: #6c757d !important;
+    color: #2c3e50 !important;
+  }
+  
+  ion-textarea {
+    --color: #2c3e50 !important;
+    --placeholder-color: #6c757d !important;
+    color: #2c3e50 !important;
+  }
+}
+
+// ===== RESPONSIVE BREAKPOINTS =====
+
+// Pantallas muy pequeñas (móviles en vertical)
+@media (max-width: 480px) {
+  .animals-content {
+    padding: 5px;
+  }
+
+  .main-container {
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .header-content {
+    .header-left {
+      font-size: 1rem;
+    }
+
+    .header-right {
+      font-size: 0.7rem;
+      gap: 5px;
+
+      .logout-btn {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .search-row {
+    flex-direction: column;
+    gap: 8px;
+
+    .custom-searchbar {
+      width: 100%;
+      min-width: auto;
+    }
+
+    .filter-button,
+    .add-button {
+      width: 100%;
+      min-width: auto;
+    }
+  }
+
+  .sex-filters {
+    .sex-filter-btn {
+      font-size: 0.75rem;
+      height: 32px;
+      min-width: 100px;
+    }
+  }
+
+  .table-header {
+    grid-template-columns: 60px 100px 80px 80px 90px 70px 80px 1fr;
+    min-width: 640px;
+
+    .header-cell {
+      padding: 10px 6px;
+      font-size: 0.7rem;
+    }
+  }
+
+  .table-body {
+    min-width: 640px;
+
+    .table-row {
+      grid-template-columns: 60px 100px 80px 80px 90px 70px 80px 1fr;
+
+      .body-cell {
+        padding: 10px 6px;
+        font-size: 0.75rem;
+        min-height: 45px;
+
+        &.obs-cell {
+          font-size: 0.7rem;
+        }
+
+        .status-badge {
+          font-size: 0.65rem;
+          padding: 3px 6px;
+        }
+      }
+    }
+  }
+
+  // Alertas responsive en móviles
+  :host ::ng-deep .custom-alert {
+    .alert-wrapper {
+      max-width: 320px;
+      margin: 20px;
+    }
+
+    .alert-head {
+      padding: 15px !important;
+
+      h2 {
+        font-size: 1.1rem !important;
+      }
+    }
+
+    .alert-message {
+      padding: 20px 15px !important;
+      font-size: 0.9rem !important;
+    }
+
+    .alert-button-group {
+      flex-direction: column !important;
+      padding: 12px !important;
+    }
+
+    .alert-button {
+      width: 100% !important;
+      min-width: auto !important;
+      margin-bottom: 8px !important;
+
+      &:last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+  }
+}
+
+// Móviles en horizontal y tablets pequeñas
+@media (min-width: 481px) and (max-width: 768px) {
+  .animals-content {
+    padding: 15px;
+  }
+
+  .main-container {
+    padding: 15px;
+  }
+
+  .header-content {
+    .header-left {
+      font-size: 1.3rem;
+    }
+
+    .header-right {
+      font-size: 0.85rem;
+      gap: 10px;
+    }
+  }
+
+  .search-row {
+    .custom-searchbar {
+      max-width: 300px;
+    }
+
+    .filter-button,
+    .add-button {
+      min-width: 80px;
+    }
+  }
+
+  .table-header {
+    grid-template-columns: 75px 130px 110px 110px 120px 85px 110px 1fr;
+    min-width: 740px;
+
+    .header-cell {
+      padding: 14px 10px;
+      font-size: 0.8rem;
+    }
+  }
+
+  .table-body {
+    min-width: 740px;
+
+    .table-row {
+      grid-template-columns: 75px 130px 110px 110px 120px 85px 110px 1fr;
+
+      .body-cell {
+        padding: 13px 10px;
+        font-size: 0.85rem;
+        min-height: 52px;
+
+        &.obs-cell {
+          font-size: 0.8rem;
+        }
+
+        .status-badge {
+          font-size: 0.75rem;
+          padding: 5px 10px;
+        }
+      }
+    }
+  }
+}
+
+// Tablets medianas
+@media (min-width: 769px) and (max-width: 1024px) {
+  .animals-content {
+    padding: 20px;
+  }
+
+  .main-container {
+    padding: 20px;
+  }
+
+  .header-content {
+    .header-left {
+      font-size: 1.4rem;
+    }
+
+    .header-right {
+      font-size: 0.9rem;
+      gap: 12px;
+    }
+  }
+
+  .search-row {
+    .custom-searchbar {
+      max-width: 350px;
+    }
+  }
+
+  .table-header {
+    grid-template-columns: 90px 150px 130px 130px 140px 100px 130px 1fr;
+    min-width: 870px;
+
+    .header-cell {
+      padding: 16px 12px;
+      font-size: 0.85rem;
+    }
+  }
+
+  .table-body {
+    min-width: 870px;
+
+    .table-row {
+      grid-template-columns: 90px 150px 130px 130px 140px 100px 130px 1fr;
+
+      .body-cell {
+        padding: 15px 12px;
+        font-size: 0.9rem;
+        min-height: 55px;
+
+        &.obs-cell {
+          font-size: 0.85rem;
+        }
+
+        .status-badge {
+          font-size: 0.8rem;
+          padding: 6px 12px;
+        }
+      }
+    }
+  }
+}
+
+// Tablets grandes y desktop
+@media (min-width: 1025px) {
+  .animals-content {
+    padding: 30px;
+  }
+
+  .main-container {
+    padding: 30px;
+    margin: 20px 0;
+  }
+
+  .header-content {
+    .header-left {
+      font-size: 1.5rem;
+    }
+
+    .header-right {
+      font-size: 0.9rem;
+      gap: 15px;
+    }
+  }
+
+  .search-row {
+    .custom-searchbar {
+      max-width: 400px;
+    }
+  }
+
+  .table-header {
+    grid-template-columns: 100px 160px 140px 140px 150px 110px 140px 1fr;
+    min-width: auto;
+
+    .header-cell {
+      padding: 18px 15px;
+      font-size: 0.9rem;
+    }
+  }
+
+  .table-body {
+    min-width: auto;
+
+    .table-row {
+      grid-template-columns: 100px 160px 140px 140px 150px 110px 140px 1fr;
+
+      .body-cell {
+        padding: 18px 15px;
+        font-size: 0.9rem;
+        min-height: 60px;
+
+        &.obs-cell {
+          font-size: 0.85rem;
+        }
+
+        .status-badge {
+          font-size: 0.8rem;
+          padding: 6px 12px;
+        }
+      }
+    }
+  }
+}
+
+// Pantallas extra grandes
+@media (min-width: 1440px) {
+  .table-header {
+    grid-template-columns: 120px 180px 160px 160px 170px 130px 160px 1fr;
+  }
+
+  .table-body .table-row {
+    grid-template-columns: 120px 180px 160px 160px 170px 130px 160px 1fr;
+  }
+}

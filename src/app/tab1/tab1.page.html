@@ -1,17 +1,114 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
+  <ion-toolbar color="success">
     <ion-title>
-      Tab 1
+      <div class="header-content">
+        <div class="header-left">
+          <div class="app-logo">AGRODATA</div>
+        </div>
+        <div class="header-right">
+          <div class="ranch-info">
+            <span class="ranch-name">RANCHO LA VAQUITA FELIZ</span>
+            <span class="animal-count">{{ totalAnimales }} ANIMALES</span>
+          </div>
+          <ion-icon name="log-out-outline" (click)="logout()" class="logout-btn"></ion-icon>
+        </div>
+      </div>
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 1</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="dashboard-content">
 
-  <app-explore-container name="Tab 1 page"></app-explore-container>
+  <!-- Mostrar mientras la DB se inicializa -->
+  <div *ngIf="cargandoDatos" class="spinner-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Cargando base de datos...</p>
+  </div>
+
+  <!-- Mensaje si se usa base de datos mock -->
+  <div *ngIf="modoMock && !cargandoDatos" class="alerta-mock">
+    <ion-icon name="warning-outline" color="warning"></ion-icon>
+    <p><strong>Modo prueba:</strong> se están usando datos simulados.</p>
+  </div>
+
+  <!-- Contenido principal solo si DB lista -->
+  <div class="main-container" *ngIf="!cargandoDatos">
+    
+    <!-- Tarjetas de estadísticas -->
+    <div class="stats-container">
+      <ion-card class="stat-card">
+        <ion-card-content>
+          <div class="stat-content">
+            <div class="stat-number total">{{ totalAnimales }}</div>
+            <div class="stat-label">Total de Animales</div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card class="stat-card">
+        <ion-card-content>
+          <div class="stat-content">
+            <div class="stat-number hembras">{{ totalHembras }}</div>
+            <div class="stat-label">Hembras</div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card class="stat-card">
+        <ion-card-content>
+          <div class="stat-content">
+            <div class="stat-number machos">{{ totalMachos }}</div>
+            <div class="stat-label">Machos</div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card class="stat-card">
+        <ion-card-content>
+          <div class="stat-content">
+            <div class="stat-number reproductores">{{ reproductores }}</div>
+            <div class="stat-label">Reproductores</div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Sección de próximos eventos -->
+    <div class="events-section">
+      <div class="events-header">
+        <ion-icon name="warning-outline" class="events-icon"></ion-icon>
+        <h2 class="events-title">Próximos Eventos</h2>
+      </div>
+
+      <div *ngIf="proximosEventos.length > 0; else noEventos">
+        <div *ngFor="let evento of proximosEventos" class="event-item">
+          <div class="event-indicator" [style.background-color]="getEventColor(evento.tipo)">
+            <ion-icon [name]="getEventIcon(evento.tipo)"></ion-icon>
+          </div>
+          
+          <div class="event-content">
+            <div class="event-main">
+              <h3 class="event-title">{{ evento.animalNombre }} ({{ evento.animalId }}) - {{ evento.tipo }}</h3>
+              <p class="event-description">{{ evento.notas }}</p>
+            </div>
+          </div>
+
+          <div class="event-date-status">
+            <div class="event-date">{{ formatShortDate(evento.fecha) }}</div>
+            <ion-badge [color]="getEstadoColor(evento.estado)" class="event-status">
+              {{ evento.estado }}
+            </ion-badge>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noEventos>
+        <div class="no-events-message">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <p>No hay eventos próximos</p>
+        </div>
+      </ng-template>
+    </div>
+
+  </div>
 </ion-content>

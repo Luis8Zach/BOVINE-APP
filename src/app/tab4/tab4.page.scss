@@ -1,0 +1,810 @@
+// SOLUCIÓN ESPECÍFICA PARA EL ESPACIO NEGRO
+.notifications-content {
+  --background: linear-gradient(135deg, #2dd36f 0%, #1e9c4f 100%);
+  padding: 10px;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+// Header mejorado
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+
+  .header-left {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+
+    .notification-count {
+      font-weight: 600;
+    }
+
+    ion-icon {
+      font-size: 1.2rem;
+    }
+
+    .logout-btn {
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      margin-left: 5px;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+  }
+}
+
+.segments-container {
+  background: white;
+  padding: 15px;
+  border-radius: 15px 15px 0 0;
+  margin: 5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: calc(100% - 10px) !important;
+  max-width: calc(100% - 10px) !important;
+  box-sizing: border-box;
+
+  ion-segment {
+    --background: #e9ecef;
+    border-radius: 15px;
+    padding: 6px;
+    width: 100%;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+
+    ion-segment-button {
+      position: relative;
+      --color: #6c757d;
+      --color-checked: white;
+      --background: transparent;
+      --background-checked: linear-gradient(135deg, #2dd36f 0%, #1e9c4f 100%);
+      --border-radius: 12px;
+      margin: 2px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex: 1;
+      min-height: 50px;
+      font-weight: 500;
+
+      &.segment-button-checked {
+        box-shadow: 0 4px 12px rgba(45, 211, 111, 0.4);
+        transform: translateY(-1px);
+        
+        ion-label {
+          color: white !important;
+          font-weight: 700;
+        }
+        
+        ion-icon {
+          color: white !important;
+          transform: scale(1.1);
+        }
+      }
+
+      &:not(.segment-button-checked) {
+        &:hover {
+          --background: rgba(45, 211, 111, 0.1);
+          --color: #2dd36f;
+          transform: translateY(-1px);
+        }
+      }
+
+      .segment-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 0.65rem;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+
+      ion-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-top: 4px;
+        transition: all 0.3s ease;
+      }
+
+      ion-icon {
+        font-size: 1.3rem;
+        transition: all 0.3s ease;
+      }
+    }
+  }
+}
+
+// CONTENEDOR PRINCIPAL - ELIMINAR ESPACIO NEGRO DEFINITIVAMENTE
+.notifications-tab,
+.settings-tab,
+.info-tab {
+  background: white !important;
+  margin: 0 5px 5px 5px;
+  border-radius: 0 0 15px 15px;
+  min-height: calc(100vh - 200px);
+  width: calc(100% - 10px) !important;
+  max-width: calc(100% - 10px) !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+// Tab de Notificaciones
+.notifications-tab {
+  .quick-actions {
+    background: #f8f9fa;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #e9ecef;
+
+    ion-button {
+      --padding-start: 12px;
+      --padding-end: 12px;
+      --padding-top: 8px;
+      --padding-bottom: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+  }
+
+  .notifications-list {
+    padding: 15px;
+  }
+
+  .notification-card {
+    margin-bottom: 15px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    &.unread {
+      border-left: 4px solid #3880ff;
+      background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .notification-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+
+      .notification-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+        ion-icon {
+          font-size: 1.4rem;
+        }
+      }
+
+      .notification-main {
+        flex: 1;
+
+        .notification-title-section {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 8px;
+
+          .notification-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+          }
+
+          .priority-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+          }
+        }
+
+        .notification-message {
+          color: #6c757d;
+          font-size: 0.9rem;
+          margin: 0 0 10px 0;
+          line-height: 1.4;
+        }
+
+        .notification-meta {
+          display: flex;
+          align-items: center;
+          font-size: 0.8rem;
+          color: #95a5a6;
+
+          .notification-time {
+            font-weight: 500;
+          }
+
+          .notification-animal {
+            color: #3880ff;
+            font-weight: 600;
+          }
+        }
+      }
+
+      .notification-actions {
+        flex-shrink: 0;
+
+        ion-button {
+          --padding-start: 8px;
+          --padding-end: 8px;
+          --padding-top: 8px;
+          --padding-bottom: 8px;
+        }
+      }
+    }
+  }
+
+  .no-notifications {
+    text-align: center;
+    padding: 80px 20px;
+    color: #95a5a6;
+
+    ion-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    h3 {
+      margin: 0 0 10px 0;
+      color: #6c757d;
+      font-size: 1.2rem;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Tab de Configuración
+.settings-tab {
+  padding: 15px;
+
+  ion-card {
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    box-sizing: border-box;
+
+    ion-card-header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 15px 15px 0 0;
+
+      ion-card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #2c3e50;
+        font-size: 1.1rem;
+        font-weight: 600;
+
+        ion-icon {
+          font-size: 1.3rem;
+          color: #2dd36f;
+        }
+      }
+    }
+
+    ion-list {
+      background: transparent;
+
+      ion-item {
+        --padding-start: 0;
+        --inner-padding-end: 0;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #f8f9fa;
+        }
+
+        ion-icon[slot="start"] {
+          margin-right: 15px;
+          font-size: 1.2rem;
+        }
+
+        ion-label {
+          h3 {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 1rem;
+          }
+
+          p {
+            color: #6c757d;
+            font-size: 0.85rem;
+            line-height: 1.3;
+          }
+        }
+
+        ion-toggle {
+          --background: #e9ecef;
+          --background-checked: #2dd36f;
+          --handle-background: white;
+          --handle-background-checked: white;
+        }
+      }
+    }
+  }
+}
+
+// Tab de Información - MANTENER ESTILOS CORRECTOS
+.info-tab {
+  padding: 15px;
+
+  ion-card {
+    border-radius: 15px !important;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: white !important;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+
+    ion-card-header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+      border-radius: 15px 15px 0 0;
+
+      ion-card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #2c3e50;
+        font-size: 1.1rem;
+        font-weight: 600;
+
+        ion-icon {
+          font-size: 1.3rem;
+          color: #2dd36f;
+        }
+      }
+    }
+
+    ion-card-content {
+      background: white !important;
+      padding: 20px;
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        background: transparent !important;
+        padding: 0;
+
+        .user-avatar {
+          width: 70px;
+          height: 70px;
+          background: linear-gradient(135deg, #3498db, #2980b9) !important;
+          box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+
+          ion-icon {
+            font-size: 2.2rem;
+            color: white !important;
+          }
+        }
+
+        .user-details {
+          flex: 1;
+
+          h2 {
+            margin: 0 0 5px 0;
+            color: #2c3e50 !important;
+            font-size: 1.5rem;
+            font-weight: bold;
+          }
+
+          p {
+            margin: 0 0 8px 0;
+            color: #6c757d !important;
+            font-size: 0.9rem;
+            font-weight: 500;
+          }
+
+          ion-note {
+            color: #27ae60 !important;
+            font-weight: 600;
+            font-size: 0.85rem;
+          }
+        }
+      }
+
+      ion-grid {
+        padding: 0;
+        width: 100%;
+
+        ion-row {
+          margin: 0;
+          width: 100%;
+
+          ion-col {
+            padding: 5px;
+
+            .stat-item {
+              display: flex;
+              align-items: center;
+              gap: 15px;
+              padding: 20px;
+              background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+              border-radius: 12px;
+              transition: all 0.3s ease;
+              height: 100%;
+              width: 100%;
+              box-sizing: border-box;
+
+              &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+              }
+
+              ion-icon {
+                font-size: 2rem;
+                flex-shrink: 0;
+              }
+
+              .stat-info {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+
+                .stat-number {
+                  font-size: 1.8rem;
+                  font-weight: bold;
+                  color: #2c3e50 !important;
+                  line-height: 1;
+                }
+
+                .stat-label {
+                  font-size: 0.85rem;
+                  color: #6c757d !important;
+                  margin-top: 4px;
+                  font-weight: 500;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ion-list {
+      background: transparent !important;
+
+      ion-item {
+        --background: transparent !important;
+        --padding-start: 0;
+        --inner-padding-end: 0;
+        margin-bottom: 5px;
+        border-radius: 8px;
+
+        &:hover {
+          --background: #f8f9fa !important;
+        }
+
+        ion-icon[slot="start"] {
+          margin-right: 15px;
+          font-size: 1.2rem;
+          flex-shrink: 0;
+        }
+
+        ion-label {
+          h3 {
+            color: #2c3e50 !important;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 1rem;
+          }
+
+          p {
+            color: #6c757d !important;
+            font-size: 0.85rem;
+            margin: 0;
+          }
+        }
+      }
+    }
+  }
+
+  .legal-text {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #6c757d !important;
+    text-align: justify;
+
+    strong {
+      color: #2c3e50 !important;
+    }
+  }
+}
+
+// Agregar estilos para el botón principal de logout:
+
+.logout-main-btn {
+  --background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  --background-hover: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  --color: white;
+  --border-radius: 15px;
+  --padding-top: 15px;
+  --padding-bottom: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.5);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  ion-icon {
+    font-size: 1.2rem;
+  }
+}
+
+// RESPONSIVE ESPECÍFICO
+@media (max-width: 480px) {
+  .notifications-content {
+    padding: 5px;
+  }
+
+  .segments-container {
+    margin: 2px;
+    padding: 8px;
+    width: calc(100% - 4px) !important;
+  }
+
+  .notifications-tab,
+  .settings-tab,
+  .info-tab {
+    margin: 0 2px 2px 2px;
+    width: calc(100% - 4px) !important;
+  }
+
+  .info-tab {
+    padding: 10px;
+
+    ion-card {
+      ion-card-content {
+        padding: 15px;
+
+        .user-info {
+          flex-direction: column;
+          text-align: center;
+          gap: 15px;
+
+          .user-avatar {
+            width: 60px;
+            height: 60px;
+
+            ion-icon {
+              font-size: 1.8rem;
+            }
+          }
+
+          .user-details {
+            text-align: center;
+
+            h2 {
+              font-size: 1.3rem;
+            }
+
+            p {
+              font-size: 0.85rem;
+            }
+          }
+        }
+
+        ion-grid ion-row ion-col .stat-item {
+          gap: 12px;
+          padding: 15px;
+
+          ion-icon {
+            font-size: 1.6rem;
+          }
+
+          .stat-info {
+            .stat-number {
+              font-size: 1.5rem;
+            }
+
+            .stat-label {
+              font-size: 0.8rem;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .notifications-content {
+    padding: 8px;
+  }
+
+  .segments-container {
+    margin: 4px;
+    padding: 12px;
+    width: calc(100% - 8px) !important;
+  }
+
+  .notifications-tab,
+  .settings-tab,
+  .info-tab {
+    margin: 0 4px 4px 4px;
+    width: calc(100% - 8px) !important;
+  }
+
+  .info-tab {
+    padding: 15px;
+
+    ion-card ion-card-content .user-info {
+      gap: 18px;
+
+      .user-avatar {
+        width: 65px;
+        height: 65px;
+
+        ion-icon {
+          font-size: 2rem;
+        }
+      }
+
+      .user-details h2 {
+        font-size: 1.4rem;
+      }
+    }
+  }
+}
+
+@media (min-width: 769px) {
+  .notifications-content {
+    padding: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .segments-container {
+    margin: 10px;
+    padding: 15px;
+    width: calc(100% - 20px) !important;
+  }
+
+  .notifications-tab,
+  .settings-tab,
+  .info-tab {
+    margin: 0 10px 10px 10px;
+    width: calc(100% - 20px) !important;
+  }
+
+  .info-tab {
+    padding: 20px;
+
+    ion-card ion-card-content {
+      padding: 25px;
+
+      .user-info {
+        gap: 25px;
+
+        .user-avatar {
+          width: 80px;
+          height: 80px;
+
+          ion-icon {
+            font-size: 2.5rem;
+          }
+        }
+
+        .user-details h2 {
+          font-size: 1.6rem;
+        }
+      }
+
+      ion-grid ion-row ion-col .stat-item {
+        padding: 25px;
+
+        ion-icon {
+          font-size: 2.2rem;
+        }
+
+        .stat-info {
+          .stat-number {
+            font-size: 2rem;
+          }
+
+          .stat-label {
+            font-size: 0.9rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// FORZAR ESTILOS GLOBALES PARA ELIMINAR ESPACIO NEGRO
+* {
+  box-sizing: border-box;
+}
+
+ion-content {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+// ELIMINAR CUALQUIER FONDO NEGRO
+ion-card-content {
+  background: white !important;
+}
+
+.user-info {
+  background: transparent !important;
+}
+
+// ASEGURAR QUE NO HAY ESPACIOS ADICIONALES
+body, html {
+  overflow-x: hidden !important;
+}
+
+// FORZAR ANCHO COMPLETO EN TODOS LOS CONTENEDORES
+.notifications-content,
+.segments-container,
+.notifications-tab,
+.settings-tab,
+.info-tab {
+  position: relative;
+  left: 0;
+  right: 0;
+}

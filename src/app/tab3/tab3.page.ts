@@ -1,3 +1,4 @@
+import { IonicModule } from '@ionic/angular';
 import { Component, type OnInit } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormsModule } from "@angular/forms"
@@ -113,6 +114,7 @@ interface CalendarDay {
     IonCol,
     IonSegment,
     IonSegmentButton,
+    IonicModule,
   ],
 })
 export class Tab3Page implements OnInit {

@@ -1,3 +1,4 @@
+import { IonicModule } from '@ionic/angular';
 import { Component, OnInit } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormsModule } from "@angular/forms"
@@ -18,6 +19,7 @@ import { AuthService } from "../services/auth.service"
 import { DatabaseService, type Animal } from "../services/database.service"
 import { addIcons } from "ionicons"
 
+
 @Component({
   selector: "app-tab2",
   templateUrl: "tab2.page.html",
@@ -27,7 +29,7 @@ import { addIcons } from "ionicons"
     CommonModule, FormsModule, IonHeader, IonToolbar, IonTitle, IonContent,
     IonCard, IonCardContent, IonItem, IonLabel, IonInput, IonButton, IonIcon,
     IonSelect, IonSelectOption, IonBadge, IonSearchbar, IonFab, IonFabButton,
-    IonModal, IonButtons, IonTextarea, IonGrid, IonRow, IonCol,
+    IonModal, IonButtons, IonTextarea, IonGrid, IonRow, IonCol,IonicModule
   ],
 })
 export class Tab2Page implements OnInit {

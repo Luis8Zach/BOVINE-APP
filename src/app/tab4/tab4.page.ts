@@ -1,3 +1,4 @@
+import { IonicModule } from '@ionic/angular';
 import { Component, type OnInit } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormsModule } from "@angular/forms"
@@ -104,6 +105,7 @@ interface NotificationSettings {
     IonSegmentButton,
     IonNote,
     IonAvatar,
+    IonicModule
   ],
 })
 export class Tab4Page implements OnInit {

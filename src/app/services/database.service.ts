@@ -446,7 +446,7 @@ export class DatabaseService {
     if (this.db) {
       await this.closeDatabase();
     }
-    await this.sqlite.deleteDatabase({ database: this.DB_NAME });
+    await this.sqlite.deleteOldDatabases()
     console.log("🗑️ Base de datos eliminada");
   }
 }

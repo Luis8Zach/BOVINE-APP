@@ -15,6 +15,26 @@
       </div>
     </ion-title>
   </ion-toolbar>
+
+  <!-- Notificaciones emergentes - DENTRO del ion-header -->
+  @if (mostrarNotificaciones && notificacionesHoy.length > 0) {
+    <ion-toolbar color="warning" class="notification-bar">
+      <ion-buttons slot="start">
+        <ion-icon name="notifications-outline" class="notification-icon"></ion-icon>
+      </ion-buttons>
+      <ion-title size="small" class="notification-title">
+        Tienes {{ notificacionesHoy.length }} evento(s) pendiente(s) para hoy
+      </ion-title>
+      <ion-buttons slot="end">
+        <ion-button (click)="verNotificaciones()" fill="clear" size="small">
+          Ver
+        </ion-button>
+        <ion-button (click)="ocultarNotificaciones()" fill="clear" size="small">
+          Enterado
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  }
 </ion-header>
 
 <ion-content [fullscreen]="true" class="dashboard-content">
@@ -116,4 +136,66 @@
       </div>
     </div>
   }
+
+  <!-- Modal de notificaciones - DENTRO del ion-content -->
+  <ion-modal [isOpen]="modalNotificacionesOpen" (didDismiss)="cerrarModalNotificaciones()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="warning">
+          <ion-title>Eventos Pendientes para Hoy</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarModalNotificaciones()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <div class="notifications-container">
+          @if (notificacionesHoy.length > 0) {
+            @for (evento of notificacionesHoy; track evento.id) {
+              <div class="notification-item">
+                <div class="notification-header">
+                  <ion-icon 
+                    [name]="getEventIcon(evento.tipo)" 
+                    [style.color]="getEventColor(evento.tipo)"
+                    class="notification-type-icon">
+                  </ion-icon>
+                  <h3>{{ evento.tipo }} - {{ evento.animalNombre }} ({{ evento.animalId }})</h3>
+                </div>
+                
+                <div class="notification-details">
+                  <p><strong>Fecha:</strong> {{ formatFullDate(evento.fecha) }}</p>
+                  <p><strong>Estado:</strong> 
+                    <ion-badge [color]="getEstadoColor(evento.estado)">
+                      {{ evento.estado }}
+                    </ion-badge>
+                  </p>
+                  @if (evento.notas) {
+                    <p><strong>Notas:</strong> {{ evento.notas }}</p>
+                  }
+                </div>
+
+                <div class="notification-actions">
+                  <ion-button 
+                    size="small" 
+                    color="primary" 
+                    (click)="irATab3(evento)"
+                    fill="outline">
+                    <ion-icon name="create-outline" slot="start"></ion-icon>
+                    Gestionar
+                  </ion-button>
+                </div>
+              </div>
+            }
+          } @else {
+            <div class="no-notifications">
+              <ion-icon name="checkmark-done-outline" color="success"></ion-icon>
+              <p>No hay eventos pendientes para hoy</p>
+            </div>
+          }
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

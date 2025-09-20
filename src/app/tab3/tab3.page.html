@@ -9,6 +9,10 @@
         <div class="header-right">
           <span>RANCHO LA VAQUITA FELIZ</span>
           <span class="event-count">{{ totalEventos }} EVENTOS</span>
+          <ion-button fill="clear" (click)="mostrarOpcionesReporte()" class="report-btn">
+            <ion-icon name="document-text-outline"></ion-icon>
+            Reportes
+          </ion-button>
           <ion-icon name="log-out-outline" (click)="logout()" class="logout-btn"></ion-icon>
         </div>
       </div>

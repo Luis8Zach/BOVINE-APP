@@ -85,6 +85,7 @@
         <div class="header-cell">Edad</div>
         <div class="header-cell">Estado</div>
         <div class="header-cell">Observaciones</div>
+        <div class="header-cell action-cell">Acciones</div>
       </div>
 
       <!-- Cuerpo de la tabla -->
@@ -102,6 +103,14 @@
             </ion-badge>
           </div>
           <div class="body-cell obs-cell">{{ animal.observaciones || '-' }}</div>
+          <div class="body-cell action-cell">
+            <ion-button size="small" color="primary" (click)="openEditModal(animal); $event.stopPropagation()">
+              <ion-icon name="create-outline"></ion-icon>
+            </ion-button>
+            <ion-button size="small" color="danger" (click)="confirmDelete(animal); $event.stopPropagation()">
+              <ion-icon name="trash-outline"></ion-icon>
+            </ion-button>
+          </div>
         </div>
       </div>
 
@@ -136,9 +145,10 @@
                 <ion-item>
                   <ion-label position="stacked">ID *</ion-label>
                   <ion-input 
-                    [(ngModel)]="currentAnimal.id" 
-                    placeholder="Ej: H001"
-                    [readonly]="isEditMode">
+                    [value]="currentAnimal.id" 
+                    type="text" 
+                    readonly
+                    placeholder="Se generará automáticamente">
                   </ion-input>
                 </ion-item>
               </ion-col>
@@ -146,8 +156,10 @@
                 <ion-item>
                   <ion-label position="stacked">SINIGA *</ion-label>
                   <ion-input 
-                    [(ngModel)]="currentAnimal.siniga" 
-                    placeholder="Ej: MX-001-2024">
+                    [value]="currentAnimal.siniga" 
+                    type="text" 
+                    readonly
+                    placeholder="Se generará automáticamente">
                   </ion-input>
                 </ion-item>
               </ion-col>
@@ -253,6 +265,71 @@
               (click)="saveAnimal()">
               <ion-icon name="save-outline" slot="start"></ion-icon>
               {{ isEditMode ? 'Actualizar' : 'Registrar' }}
+            </ion-button>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Modal para eliminar animal -->
+  <ion-modal [isOpen]="isDeleteModalOpen" (didDismiss)="closeDeleteModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="danger">
+          <ion-title>Eliminar Animal</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeDeleteModal()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content">
+        <div class="form-container">
+          <ion-item>
+            <ion-label position="stacked">Animal a eliminar</ion-label>
+            <ion-input [value]="animalToDelete?.nombre + ' (' + animalToDelete?.id + ')'" readonly></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Razón de eliminación *</ion-label>
+            <ion-select [(ngModel)]="deleteReason" placeholder="Selecciona la razón">
+              <ion-select-option value="Venta">Venta</ion-select-option>
+              <ion-select-option value="Muerte">Muerte</ion-select-option>
+              <ion-select-option value="Traslado">Traslado a otro rancho</ion-select-option>
+              <ion-select-option value="Error">Registro duplicado o erróneo</ion-select-option>
+              <ion-select-option value="Otro">Otro motivo</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item *ngIf="deleteReason === 'Otro'">
+            <ion-label position="stacked">Especificar motivo *</ion-label>
+            <ion-textarea
+              [(ngModel)]="customDeleteReason"
+              placeholder="Describe el motivo de la eliminación..."
+              rows="3">
+            </ion-textarea>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Observaciones adicionales</ion-label>
+            <ion-textarea
+              [(ngModel)]="deleteObservations"
+              placeholder="Observaciones adicionales sobre la eliminación..."
+              rows="2">
+            </ion-textarea>
+          </ion-item>
+
+          <div class="modal-buttons">
+            <ion-button expand="block" color="medium" (click)="closeDeleteModal()">
+              <ion-icon name="close-outline" slot="start"></ion-icon>
+              Cancelar
+            </ion-button>
+            <ion-button expand="block" color="danger" (click)="deleteAnimal()" [disabled]="!canDelete()">
+              <ion-icon name="trash-outline" slot="start"></ion-icon>
+              Confirmar Eliminación
             </ion-button>
           </div>
         </div>

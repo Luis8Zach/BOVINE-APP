@@ -1395,3 +1395,21 @@ ion-item {
     }
   }
 }
+
+
+// Botón de reportes
+.report-btn {
+  --color: #000000;
+  margin-right: 10px;
+  
+  ion-icon {
+    margin-right: 5px;
+  }
+}
+
+// Loading personalizado
+.custom-loading {
+  --background: #3880ff;
+  --spinner-color: #ffffff;
+  color: #ffffff;
+}

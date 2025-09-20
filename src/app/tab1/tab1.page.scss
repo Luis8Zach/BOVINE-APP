@@ -451,3 +451,108 @@
   }
 }
 
+// Barra de notificaciones
+.notification-bar {
+  --background: var(--ion-color-warning);
+  --color: var(--ion-color-warning-contrast);
+  
+  .notification-icon {
+    font-size: 1.5rem;
+    margin-right: 8px;
+  }
+  
+  .notification-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  ion-button {
+    --color: var(--ion-color-warning-contrast);
+    font-weight: 600;
+  }
+}
+
+// Modal de notificaciones
+.notifications-container {
+  padding: 16px;
+}
+
+.notification-item {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--ion-color-warning);
+  
+  .notification-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    
+    .notification-type-icon {
+      font-size: 1.5rem;
+      margin-right: 12px;
+    }
+    
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--ion-color-dark);
+    }
+  }
+  
+  .notification-details {
+    margin-bottom: 16px;
+    
+    p {
+      margin: 8px 0;
+      color: var(--ion-color-medium);
+      
+      strong {
+        color: var(--ion-color-dark);
+      }
+    }
+    
+    ion-badge {
+      margin-left: 8px;
+    }
+  }
+  
+  .notification-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.no-notifications {
+  text-align: center;
+  padding: 40px 20px;
+  
+  ion-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+  }
+  
+  p {
+    color: var(--ion-color-medium);
+    font-size: 1.1rem;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .notification-title {
+    font-size: 0.8rem !important;
+  }
+  
+  .notification-item {
+    .notification-header {
+      flex-direction: column;
+      align-items: flex-start;
+      
+      .notification-type-icon {
+        margin-bottom: 8px;
+      }
+    }
+  }
+}

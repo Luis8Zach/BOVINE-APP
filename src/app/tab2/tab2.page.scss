@@ -740,3 +740,45 @@ ion-select-option {
     grid-template-columns: 120px 180px 160px 160px 170px 130px 160px 1fr;
   }
 }
+
+//csss para eliminar anaimales 
+// En tab2.page.scss
+.action-cell {
+  width: 120px;
+  min-width: 120px;
+  text-align: center;
+}
+
+.table-row .action-cell {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+ion-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  margin: 0;
+}
+
+ion-input[readonly] {
+  opacity: 0.8;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding-left: 8px;
+  
+  &.item-has-focus {
+    background-color: #e8f4ff;
+  }
+}
+
+// Estilo para indicar que es generado automáticamente
+ion-item[readonly] {
+  ion-note {
+    font-style: italic;
+    color: #666;
+  }
+}

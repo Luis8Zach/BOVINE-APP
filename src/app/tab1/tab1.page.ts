@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { NavController } from '@ionic/angular';
 import { DatabaseService, Animal } from '../services/database.service';
 import { AlertController, ToastController } from '@ionic/angular';
 import { IonicModule } from '@ionic/angular';
-import { CommonModule } from '@angular/common'; 
-import { Router } from '@angular/router'; // ← Necesario para logout
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { DataShareService } from '../services/data-share.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -14,7 +17,7 @@ import { Router } from '@angular/router'; // ← Necesario para logout
     IonicModule, CommonModule
   ]
 })
-export class Tab1Page implements OnInit {
+export class Tab1Page implements OnInit, OnDestroy {
   // Cambia los valores iniciales a 0
   totalAnimales = 0;
   totalHembras = 0;
@@ -26,15 +29,42 @@ export class Tab1Page implements OnInit {
   // Próximos eventos (ahora vendrán de la base de datos)
   proximosEventos: any[] = [];
 
+  // Nuevas propiedades para notificaciones
+  notificacionesHoy: any[] = [];
+  mostrarNotificaciones = true;
+  modalNotificacionesOpen = false;
+  notificacionesVistas: Set<string> = new Set();
+
+  // Suscripción para actualizaciones de datos
+  private dataUpdateSubscription!: Subscription;
+
   constructor(
     private databaseService: DatabaseService,
     private alertController: AlertController,
     private toastController: ToastController,
-    private router: Router // ← Inyecta Router para logout
+    private router: Router,
+    private dataShareService: DataShareService,
+    private navCtrl: NavController
   ) {}
 
   async ngOnInit() {
+    // Cargar estado de notificaciones primero
+    this.cargarEstadoNotificaciones();
+    
     await this.loadDashboardData();
+    
+    // Suscribirse a las actualizaciones de datos
+    this.dataUpdateSubscription = this.dataShareService.dataUpdated$.subscribe(() => {
+      console.log('🔄 Actualizando datos desde Tab2...');
+      this.loadDashboardData();
+    });
+  }
+
+  ngOnDestroy() {
+    // Limpiar la suscripción cuando el componente se destruye
+    if (this.dataUpdateSubscription) {
+      this.dataUpdateSubscription.unsubscribe();
+    }
   }
 
   // MÉTODO LOGOUT (debe ser público)
@@ -74,9 +104,20 @@ export class Tab1Page implements OnInit {
 
       // 2. Obtener datos reales
       const animals = await this.databaseService.getAllAnimals();
-      const eventos = await this.databaseService.getAllEventos();
-
-      // 3. Calcular estadísticas
+      
+      // 3. Obtener eventos desde MÚLTIPLES FUENTES:
+      //    - De la base de datos (para eventos de Tab2)
+      //    - De localStorage (para eventos de Tab3)
+      const eventosDB = await this.databaseService.getAllEventos();
+      
+      // Obtener eventos de Tab3 desde localStorage
+      const eventosTab3Guardados = localStorage.getItem('eventosTab3');
+      const eventosTab3 = eventosTab3Guardados ? JSON.parse(eventosTab3Guardados) : [];
+      
+      // Combinar eventos de ambas fuentes
+      const todosLosEventos = [...eventosDB, ...eventosTab3];
+      
+      // 4. Calcular estadísticas
       this.totalAnimales = animals.length;
       this.totalHembras = animals.filter(a => a.sexo === 'Hembra').length;
       this.totalMachos = animals.filter(a => a.sexo === 'Macho').length;
@@ -84,56 +125,101 @@ export class Tab1Page implements OnInit {
         a.sexo === 'Macho' || (a.sexo === 'Hembra' && this.calculateAge(a.fechaNacimiento) >= 2)
       ).length;
 
-      // 4. Procesar próximos eventos
-      this.proximosEventos = this.processEventos(eventos);
-
+      // 5. Procesar próximos eventos (de ambas fuentes)
+      this.proximosEventos = this.processEventos(todosLosEventos);
+      
+      // 6. Cargar notificaciones para hoy
+      await this.cargarNotificacionesHoy(todosLosEventos);
+      
       await this.showToast('Datos actualizados', 'success');
+      
     } catch (error) {
-      console.error('Error:', error);
-      this.modoMock = true; // ← Activar modo mock en caso de error
+      console.error('Error cargando datos:', error);
+      this.modoMock = true;
       await this.showToast('Error cargando datos. Usando modo simulación.', 'danger');
       
-      // Valores por defecto para modo mock
-      this.setDefaultStats();
+      // Valores por defecto para modo mock (incluyendo eventos de Tab3)
+      this.setDefaultStatsWithTab3Events();
     } finally {
       this.cargandoDatos = false;
     }
   }
 
-  private setDefaultStats() {
+  // Método para cargar notificaciones del día
+  private async cargarNotificacionesHoy(eventos: any[]) {
+    const hoy = new Date().toISOString().split('T')[0];
+    
+    // Filtrar eventos de hoy que no estén realizados
+    this.notificacionesHoy = eventos.filter(evento => 
+      evento.fecha === hoy && 
+      evento.estado !== 'Realizado' &&
+      !this.notificacionesVistas.has(evento.id)
+    );
+
+    // Mostrar notificaciones solo si hay eventos pendientes para hoy
+    this.mostrarNotificaciones = this.notificacionesHoy.length > 0;
+    
+    // Guardar en localStorage para persistencia
+    this.guardarEstadoNotificaciones();
+  }
+
+  // Método auxiliar para modo mock que incluye eventos de Tab3
+  private setDefaultStatsWithTab3Events() {
     this.totalAnimales = 24;
     this.totalHembras = 18;
     this.totalMachos = 6;
     this.reproductores = 8;
-    
-    // Eventos de ejemplo para modo mock
-    this.proximosEventos = [
+
+    // Obtener eventos de Tab3 incluso en modo mock
+    const eventosTab3Guardados = localStorage.getItem('eventosTab3');
+    const eventosTab3 = eventosTab3Guardados ? JSON.parse(eventosTab3Guardados) : [];
+
+    // Eventos de ejemplo para modo mock + eventos reales de Tab3
+    const eventosMock = [
       {
-        id: 1,
+        id: '1',
         animalNombre: 'Vaca 01',
         animalId: 'B001',
         tipo: 'Celo',
         notas: 'En periodo de celo',
-        fecha: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+        fecha: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         estado: 'Pendiente'
       },
       {
-        id: 2,
+        id: '2',
         animalNombre: 'Vaca 05',
         animalId: 'B005',
         tipo: 'Vacunación',
         notas: 'Vacuna anual',
-        fecha: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        fecha: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         estado: 'Programado'
       }
     ];
+
+    // Combinar eventos mock con eventos reales de Tab3
+    const todosLosEventos = [...eventosMock, ...eventosTab3];
+    
+    this.proximosEventos = this.processEventos(todosLosEventos);
+    
+    // También cargar notificaciones en modo mock
+    this.cargarNotificacionesHoy(todosLosEventos);
   }
 
+  // Método processEventos actualizado para manejar múltiples fuentes
   private processEventos(eventos: any[]): any[] {
+    const hoy = new Date().toISOString().split('T')[0];
+    
     return eventos
       .filter(e => e.estado !== 'Realizado')
-      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
-      .slice(0, 4) // Mostrar solo los próximos 4 eventos
+      .sort((a, b) => {
+        // Priorizar eventos de hoy primero
+        if (a.fecha === hoy && b.fecha !== hoy) return -1;
+        if (a.fecha !== hoy && b.fecha === hoy) return 1;
+        
+        // Luego ordenar por fecha
+        return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+      })
+      .slice(0, 6)
       .map(evento => ({
         ...evento,
         fechaCorta: this.formatShortDate(evento.fecha),
@@ -142,15 +228,77 @@ export class Tab1Page implements OnInit {
       }));
   }
 
+  // Método calculateAge (asegúrate de que esté disponible)
   private calculateAge(fechaNacimiento: string): number {
+    if (!fechaNacimiento) return 0;
     const birth = new Date(fechaNacimiento);
     const today = new Date();
     const diffTime = Math.abs(today.getTime() - birth.getTime());
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365)); // Edad en años
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365.25)); // Edad en años considerando años bisiestos
+  }
+
+  // Métodos para manejar notificaciones
+  verNotificaciones() {
+    this.modalNotificacionesOpen = true;
+  }
+
+  cerrarModalNotificaciones() {
+    this.modalNotificacionesOpen = false;
+  }
+
+  ocultarNotificaciones() {
+    // Marcar todas las notificaciones actuales como vistas
+    this.notificacionesHoy.forEach(evento => {
+      this.notificacionesVistas.add(evento.id);
+    });
+    
+    this.mostrarNotificaciones = false;
+    this.guardarEstadoNotificaciones();
+  }
+
+  irATab3(evento: any) {
+  console.log('Navegando a Tab3 para gestionar evento:', evento);
+  this.cerrarModalNotificaciones();
+  
+  // Guardar el evento seleccionado para pasarlo a Tab3
+  localStorage.setItem('eventoParaGestionar', JSON.stringify(evento));
+  
+  // Navegar a Tab3
+  this.navCtrl.navigateForward('/tabs/tab3');
+  
+  // Opcional: También puedes usar el router
+  // this.router.navigate(['/tabs/tab3']);
+}
+
+  // Guardar estado de notificaciones en localStorage
+  private guardarEstadoNotificaciones() {
+    localStorage.setItem('notificacionesVistas', JSON.stringify(Array.from(this.notificacionesVistas)));
+  }
+
+  // Cargar estado de notificaciones desde localStorage
+  private cargarEstadoNotificaciones() {
+    const vistasGuardadas = localStorage.getItem('notificacionesVistas');
+    if (vistasGuardadas) {
+      this.notificacionesVistas = new Set(JSON.parse(vistasGuardadas));
+    }
+  }
+
+  // Método para formatear fecha completa
+  formatFullDate(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   }
 
   // ESTOS MÉTODOS DEBEN SER PÚBLICOS PORQUE SE USAN EN EL TEMPLATE
+
   public formatShortDate(dateString: string): string {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
@@ -175,13 +323,14 @@ export class Tab1Page implements OnInit {
     return icons[tipo] || 'time-outline';
   }
 
-  // MÉTODO getEstadoColor (faltaba)
+  // MÉTODO getEstadoColor
   public getEstadoColor(estado: string): string {
     const colors: {[key: string]: string} = {
       'Pendiente': 'warning',
       'Programado': 'primary',
       'Realizado': 'success',
-      'Cancelado': 'danger'
+      'Cancelado': 'danger',
+      'Alerta': 'danger'
     };
     return colors[estado] || 'medium';
   }

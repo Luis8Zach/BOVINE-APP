@@ -73,6 +73,11 @@ private async executeQuery(sql: string, params: any[] = []): Promise<any> {
     throw error;
   }
 }
+
+//Metodod para hacer publico 
+async executePublicQuery(sql: string, params: any[] = []): Promise<any> {
+    return await this.executeQuery(sql, params);
+}
   // ==================== INICIALIZACIÓN ====================
 
  async initializeDatabase(): Promise<boolean> {
@@ -616,7 +621,7 @@ async insertAnimal(animal: Animal): Promise<boolean> {
       INSERT INTO animals (
         id, siniga, nombre, madre, padre, fechaNacimiento, edad, sexo,
         estado, peso, observaciones, fechaCreacion, fechaActualizacion
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const params = [
@@ -837,7 +842,6 @@ async getAllEventos(): Promise<any[]> {
     const result = await this.db.query("SELECT * FROM eventos ORDER BY fecha DESC");
     
     if (result.values) {
-      // Convertir recordatorio de número a booleano
       return result.values.map(evento => ({
         ...evento,
         recordatorio: evento.recordatorio === 1
@@ -927,6 +931,10 @@ async deleteAnimal(id: string, razonEliminacion: string): Promise<boolean> {
       return false;
     }
   }
+}
+//metodo para comunicacion notification.database.service
+getDatabase(): SQLiteDBConnection | null {
+    return this.db;
 }
 
 async restoreAnimal(id: string): Promise<boolean> {

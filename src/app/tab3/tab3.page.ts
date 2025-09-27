@@ -175,16 +175,16 @@ debugModalState() {
 }
 
   async ngOnInit() {
-    await this.loadAnimals();
-    this.loadEventsFromStorage();
-    this.updateStats();
-    this.applyFilters();
-    this.generateCalendar();
-    this.cargarEventoParaGestionar();
-    this.debugModalState();
-    this.cargarEventoParaGestionar();
-    await this.loadEventsFromDatabase();
-  }
+  await this.loadAnimals();
+  await this.loadEventsFromDatabase(); // Solo BD
+  this.updateStats();
+  this.applyFilters();
+  this.generateCalendar();
+  localStorage.removeItem('eventosTab3');
+  localStorage.removeItem('notificacionesVistas');
+  
+  console.log('🧹 Datos antiguos de localStorage limpiados');
+}
 
   // Cargar eventos desde localStorage
   private loadEventsFromStorage() {
@@ -534,7 +534,7 @@ async closeModal() {
   }
 }
 
-  async saveEvento() {
+async saveEvento() {
   if (!this.validateEvento()) {
     await this.showToast("Por favor complete todos los campos requeridos", "warning");
     return;
@@ -558,21 +558,18 @@ async closeModal() {
     await this.showToast("Evento registrado correctamente", "success");
   }
 
-  // Guardar y sincronizar inmediatamente
-  await this.saveEventsToStorage();
+  // GUARDAR SOLO EN BD
+  await this.saveEventsToDatabase();
   
-  // Forzar actualización de la vista
   this.updateStats();
   this.applyFilters();
   this.generateCalendar();
-  
   this.closeModal();
 }
 
 // En tab3.page.ts
 async forceReloadEvents() {
   console.log('🔄 Forzando recarga de eventos...');
-  await this.loadEventsFromDatabase();
   this.updateStats();
   this.applyFilters();
   this.generateCalendar();
@@ -611,23 +608,25 @@ ionViewDidEnter() {
     await alert.present();
   }
 
-  async deleteEvento(evento: Evento) {
+ async deleteEvento(evento: Evento) {
   const index = this.eventos.findIndex((e) => e.id === evento.id);
   if (index !== -1) {
     this.eventos.splice(index, 1);
-    this.updateStats();
-    this.applyFilters();
-    this.generateCalendar();
     
+    // Eliminar de la BD
     try {
-      // Eliminar de la base de datos
       await this.databaseService.deleteEvento(evento.id);
       console.log('✅ Evento eliminado de la BD');
     } catch (error) {
       console.error('❌ Error eliminando evento de BD:', error);
     }
     
-    await this.saveEventsToStorage();
+    // Actualizar en BD
+    await this.saveEventsToDatabase();
+    
+    this.updateStats();
+    this.applyFilters();
+    this.generateCalendar();
     await this.showToast("Evento eliminado correctamente", "success");
   }
 }
@@ -685,17 +684,20 @@ private hasEventChanged(evento1: any, evento2: any): boolean {
 
 
 
-  async markAsCompleted(evento: Evento) {
-    const index = this.eventos.findIndex((e) => e.id === evento.id);
-    if (index !== -1) {
-      this.eventos[index].estado = "Realizado";
-      this.updateStats();
-      this.applyFilters();
-      this.generateCalendar();
-      this.saveEventsToStorage(); // Guardar en localStorage y notificar
-      await this.showToast(`${evento.tipo} marcado como realizado`, "success");
-    }
+ async markAsCompleted(evento: Evento) {
+  const index = this.eventos.findIndex((e) => e.id === evento.id);
+  if (index !== -1) {
+    this.eventos[index].estado = "Realizado";
+    
+    // Actualizar en BD
+    await this.saveEventsToDatabase();
+    
+    this.updateStats();
+    this.applyFilters();
+    this.generateCalendar();
+    await this.showToast(`${evento.tipo} marcado como realizado`, "success");
   }
+}
 
   validateEvento(): boolean {
     return !!(
@@ -840,40 +842,69 @@ private cargarEventoParaGestionar() {
   }
 }
 
-// Reemplaza el método loadEventsFromDatabase
+// En tab3.page.ts
+async debugEventos() {
+  console.log('🐛 DEBUG: Estado actual de eventos');
+  console.log('Total eventos en array:', this.eventos.length);
+  console.log('Eventos:', this.eventos);
+  
+  // Verificar duplicados por ID
+  const ids = this.eventos.map(e => e.id);
+  const uniqueIds = [...new Set(ids)];
+  console.log('IDs únicos:', uniqueIds.length);
+  console.log('IDs duplicados:', ids.length !== uniqueIds.length);
+  
+  if (ids.length !== uniqueIds.length) {
+    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+    console.log('IDs duplicados encontrados:', duplicates);
+  }
+}
+
+// Llama a este método después de cargar eventos
 private async loadEventsFromDatabase() {
   try {
-    console.log('🔄 Cargando eventos desde base de datos...');
+    // ... código existente ...
+    this.eventos = await this.databaseService.getAllEventos();
+    await this.debugEventos(); // ← Añade esto temporalmente
+  } catch (error) {
+    // ... manejo de error
+  }
+}
+
+// Reemplaza el método loadEventsFromDatabase
+private async saveEventsToDatabase() {
+  try {
+    console.log('💾 Guardando eventos en base de datos...');
     
     const dbReady = await this.databaseService.initializeDatabase();
     if (!dbReady) {
       throw new Error('Base de datos no disponible');
     }
     
-    const dbEventos = await this.databaseService.getAllEventos();
-    
-    if (dbEventos && dbEventos.length > 0) {
-      // USAR SOLO los eventos de la base de datos
-      this.eventos = dbEventos;
-      console.log(`✅ ${this.eventos.length} eventos cargados desde BD`);
+    // Sincronizar cada evento con la BD
+    for (const evento of this.eventos) {
+      const eventoExistente = await this.databaseService.getEventoById(evento.id);
       
-      // Sincronizar localStorage con la BD (para mantener consistencia)
-      localStorage.setItem('eventosTab3', JSON.stringify(this.eventos));
-    } else {
-      // Solo si no hay eventos en BD, cargar desde localStorage
-      this.loadEventsFromStorage();
-      console.log('ℹ️ No hay eventos en BD, usando localStorage');
-      
-      // Y luego migrar estos eventos a la BD
-      await this.migrateEventsToDatabase();
+      if (eventoExistente) {
+        await this.databaseService.updateEvento(evento);
+      } else {
+        await this.databaseService.insertEvento(evento);
+      }
     }
+    
+    console.log('✅ Eventos guardados en BD');
+    
+    // NOTA: Ya NO usamos localStorage para eventos
+    // localStorage.removeItem('eventosTab3'); // Limpiar por si acaso
+    
+    // Notificar a otras pestañas
+    this.dataShareService.notifyDataUpdate();
+    
   } catch (error) {
-    console.error('❌ Error cargando eventos desde BD:', error);
-    // Fallback a localStorage
-    this.loadEventsFromStorage();
+    console.error('❌ Error guardando eventos en BD:', error);
+    throw error;
   }
 }
-
 // En tab3.page.ts
 private async migrateEventsToDatabase(): Promise<void> {
   try {

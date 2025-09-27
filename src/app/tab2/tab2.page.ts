@@ -391,6 +391,7 @@ async saveAnimal() {
 
  validateAnimal(): boolean {
   return !!(
+    this.currentAnimal.siniga &&
     this.currentAnimal.nombre &&
     this.currentAnimal.fechaNacimiento &&
     this.currentAnimal.sexo
@@ -399,24 +400,23 @@ async saveAnimal() {
 }
 
 private async getEmptyAnimal(): Promise<Animal> {
-  const id = this.databaseService.generateAnimalId();
-  const siniga = await this.databaseService.generateUniqueSiniga();
-  
-  return {
-    id: id,
-    siniga: siniga,
-    nombre: "",
-    madre: "",
-    padre: "",
-    fechaNacimiento: "",
-    edad: "",
-    sexo: "Hembra",
-    estado: "Excelente",
-    peso: null,
-    observaciones: "",
-    fechaCreacion: new Date().toISOString(),
-    fechaActualizacion: new Date().toISOString(),
-  };
+    const id = await this.databaseService.generateSequentialId();
+    
+    return {
+        id: id,
+        siniga: "", // Ahora vacío para que se ingrese manualmente
+        nombre: "",
+        madre: "",
+        padre: "",
+        fechaNacimiento: "",
+        edad: "",
+        sexo: "Hembra",
+        estado: "Excelente",
+        peso: null,
+        observaciones: "",
+        fechaCreacion: new Date().toISOString(),
+        fechaActualizacion: new Date().toISOString(),
+    };
 }
   calculateAge(birthDate: string): string {
   if (!birthDate) return "";

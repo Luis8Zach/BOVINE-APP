@@ -23,7 +23,7 @@
     <div class="search-section">
       <div class="search-row">
         <ion-searchbar 
-          placeholder="Buscar por ID o SINIGA"
+          placeholder="Buscar por ID, SINIGA o Nombre"
           (ionInput)="onSearchChange($event)" 
           [value]="searchTerm"
           class="custom-searchbar">
@@ -40,14 +40,9 @@
         <ion-button 
           color="success" 
           class="add-button" 
-          (click)="openAddModal()"
-          style="--color: #ffffff; color: #ffffff;">
-          <ion-icon 
-            name="add-outline" 
-            slot="start" 
-            style="color: #ffffff !important;">
-          </ion-icon>
-          <span style="color: #ffffff !important; font-weight: 600;">AGREGAR</span>
+          (click)="openAddModal()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          AGREGAR
         </ion-button>
       </div>
     </div>
@@ -79,20 +74,22 @@
       <div class="table-header">
         <div class="header-cell">ID</div>
         <div class="header-cell">SINIGA</div>
+        <div class="header-cell">Nombre</div>
         <div class="header-cell">Madre</div>
         <div class="header-cell">Padre</div>
         <div class="header-cell">F. Nacimiento</div>
         <div class="header-cell">Edad</div>
         <div class="header-cell">Estado</div>
-        <div class="header-cell">Observaciones</div>
+        <div class="header-cell">Sexo</div>
         <div class="header-cell action-cell">Acciones</div>
       </div>
 
       <!-- Cuerpo de la tabla -->
       <div class="table-body">
-        <div *ngFor="let animal of filteredAnimals" class="table-row" (click)="openEditModal(animal)">
+        <div *ngFor="let animal of filteredAnimals" class="table-row">
           <div class="body-cell">{{ animal.id }}</div>
           <div class="body-cell">{{ animal.siniga }}</div>
+          <div class="body-cell">{{ animal.nombre }}</div>
           <div class="body-cell">{{ animal.madre || '-' }}</div>
           <div class="body-cell">{{ animal.padre || '-' }}</div>
           <div class="body-cell">{{ formatDate(animal.fechaNacimiento) }}</div>
@@ -102,12 +99,16 @@
               {{ animal.estado }}
             </ion-badge>
           </div>
-          <div class="body-cell obs-cell">{{ animal.observaciones || '-' }}</div>
+          <div class="body-cell">
+            <ion-badge [color]="animal.sexo === 'Hembra' ? 'danger' : 'primary'">
+              {{ animal.sexo }}
+            </ion-badge>
+          </div>
           <div class="body-cell action-cell">
-            <ion-button size="small" color="primary" (click)="openEditModal(animal); $event.stopPropagation()">
+            <ion-button size="small" fill="clear" color="primary" (click)="openEditModal(animal); $event.stopPropagation()">
               <ion-icon name="create-outline"></ion-icon>
             </ion-button>
-            <ion-button size="small" color="danger" (click)="confirmDelete(animal); $event.stopPropagation()">
+            <ion-button size="small" fill="clear" color="danger" (click)="confirmDelete(animal); $event.stopPropagation()">
               <ion-icon name="trash-outline"></ion-icon>
             </ion-button>
           </div>
@@ -148,18 +149,18 @@
                     [value]="currentAnimal.id" 
                     type="text" 
                     readonly
-                    placeholder="Se generará automáticamente">
+                    placeholder="Generado automáticamente">
                   </ion-input>
                 </ion-item>
               </ion-col>
               <ion-col size="6">
                 <ion-item>
                   <ion-label position="stacked">SINIGA *</ion-label>
-                  <ion-input 
-                    [value]="currentAnimal.siniga" 
-                    type="text" 
-                    readonly
-                    placeholder="Se generará automáticamente">
+                  <ion-input
+                    [(ngModel)]="currentAnimal.siniga"
+                    type="text"
+                    placeholder="Ingrese el SINIGA"
+                    required>
                   </ion-input>
                 </ion-item>
               </ion-col>
@@ -171,7 +172,8 @@
                   <ion-label position="stacked">Nombre *</ion-label>
                   <ion-input 
                     [(ngModel)]="currentAnimal.nombre" 
-                    placeholder="Nombre del animal">
+                    placeholder="Nombre del animal"
+                    required>
                   </ion-input>
                 </ion-item>
               </ion-col>
@@ -205,14 +207,15 @@
                   <ion-input 
                     type="date"
                     [(ngModel)]="currentAnimal.fechaNacimiento"
-                    (ionChange)="onBirthDateChange()">
+                    (ionChange)="onBirthDateChange()"
+                    required>
                   </ion-input>
                 </ion-item>
               </ion-col>
               <ion-col size="6">
                 <ion-item>
                   <ion-label position="stacked">Sexo *</ion-label>
-                  <ion-select [(ngModel)]="currentAnimal.sexo">
+                  <ion-select [(ngModel)]="currentAnimal.sexo" required>
                     <ion-select-option value="Hembra">Hembra</ion-select-option>
                     <ion-select-option value="Macho">Macho</ion-select-option>
                   </ion-select>
@@ -223,8 +226,8 @@
             <ion-row>
               <ion-col size="6">
                 <ion-item>
-                  <ion-label position="stacked">Estado</ion-label>
-                  <ion-select [(ngModel)]="currentAnimal.estado">
+                  <ion-label position="stacked">Estado *</ion-label>
+                  <ion-select [(ngModel)]="currentAnimal.estado" required>
                     <ion-select-option value="Excelente">Excelente</ion-select-option>
                     <ion-select-option value="Bueno">Bueno</ion-select-option>
                     <ion-select-option value="Regular">Regular</ion-select-option>
@@ -238,7 +241,8 @@
                   <ion-input 
                     type="number"
                     [(ngModel)]="currentAnimal.peso" 
-                    placeholder="0">
+                    placeholder="0"
+                    min="0">
                   </ion-input>
                 </ion-item>
               </ion-col>
@@ -261,8 +265,16 @@
           <div class="modal-buttons">
             <ion-button 
               expand="block" 
+              color="medium" 
+              (click)="closeModal()">
+              <ion-icon name="close-outline" slot="start"></ion-icon>
+              Cancelar
+            </ion-button>
+            <ion-button 
+              expand="block" 
               color="success" 
-              (click)="saveAnimal()">
+              (click)="saveAnimal()"
+              [disabled]="!validateAnimal()">
               <ion-icon name="save-outline" slot="start"></ion-icon>
               {{ isEditMode ? 'Actualizar' : 'Registrar' }}
             </ion-button>
@@ -290,12 +302,15 @@
         <div class="form-container">
           <ion-item>
             <ion-label position="stacked">Animal a eliminar</ion-label>
-            <ion-input [value]="animalToDelete?.nombre + ' (' + animalToDelete?.id + ')'" readonly></ion-input>
+            <ion-input 
+              [value]="animalToDelete?.nombre + ' (' + animalToDelete?.id + ')'" 
+              readonly>
+            </ion-input>
           </ion-item>
 
           <ion-item>
             <ion-label position="stacked">Razón de eliminación *</ion-label>
-            <ion-select [(ngModel)]="deleteReason" placeholder="Selecciona la razón">
+            <ion-select [(ngModel)]="deleteReason" placeholder="Selecciona la razón" required>
               <ion-select-option value="Venta">Venta</ion-select-option>
               <ion-select-option value="Muerte">Muerte</ion-select-option>
               <ion-select-option value="Traslado">Traslado a otro rancho</ion-select-option>
@@ -309,7 +324,8 @@
             <ion-textarea
               [(ngModel)]="customDeleteReason"
               placeholder="Describe el motivo de la eliminación..."
-              rows="3">
+              rows="3"
+              required>
             </ion-textarea>
           </ion-item>
 

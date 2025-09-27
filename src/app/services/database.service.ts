@@ -73,6 +73,41 @@ private async executeQuery(sql: string, params: any[] = []): Promise<any> {
     throw error;
   }
 }
+//metodo para generar id aotomatico 
+// En database.service.ts - agregar este método
+async generateSequentialId(): Promise<string> {
+    try {
+        if (!this.db || !this.isReady()) {
+            return `A-001`; // Fallback
+        }
+
+        // Obtener el último ID de la base de datos
+        const result = await this.db.query(
+            "SELECT id FROM animals ORDER BY fechaCreacion DESC LIMIT 1"
+        );
+
+        if (result.values && result.values.length > 0) {
+            const lastId = result.values[0].id;
+            
+            // Extraer el número del último ID (ejemplo: "A-001" -> 1)
+            const match = lastId.match(/A-(\d+)/);
+            if (match && match[1]) {
+                const lastNumber = parseInt(match[1]);
+                const newNumber = lastNumber + 1;
+                return `A-${newNumber.toString().padStart(3, '0')}`;
+            }
+        }
+
+        // Si no hay animales, empezar desde 001
+        return `A-001`;
+
+    } catch (error) {
+        console.error('Error generando ID secuencial:', error);
+        // Fallback: usar timestamp
+        return `A-${Date.now().toString().slice(-3)}`;
+    }
+}
+
 
 //Metodod para hacer publico 
 async executePublicQuery(sql: string, params: any[] = []): Promise<any> {
@@ -595,68 +630,73 @@ async debugDatabase(): Promise<void> {
   }
 
 // CORREGIR el método insertAnimal - ELIMINAR el comentario dentro del string SQL
+// En database.service.ts - modificar insertAnimal
 async insertAnimal(animal: Animal): Promise<boolean> {
-  console.log('🟡 DatabaseService.insertAnimal llamado con:', JSON.stringify(animal));
-  
-  if (!this.isReady()) {
-    console.log('❌ Base de datos no disponible');
-    return false;
-  }
+    console.log('🔴 DatabaseService.insertAnimal llamado con:', JSON.stringify(animal));
 
-  try {
-    console.log('🔍 Verificando SINIGA único:', animal.siniga);
-    const existing = await this.db!.query(
-      "SELECT id FROM animals WHERE siniga = ?",
-      [animal.siniga]
-    );
-    
-    if (existing.values && existing.values.length > 0) {
-      console.log('❌ Ya existe un animal con SINIGA:', animal.siniga);
-      return false;
+    if (!this.isReady()) {
+        console.log('❌ Base de datos no disponible');
+        return false;
     }
 
-    const finalId = animal.id || this.generateAnimalId();
-    
-    const sql = `
-      INSERT INTO animals (
-        id, siniga, nombre, madre, padre, fechaNacimiento, edad, sexo,
-        estado, peso, observaciones, fechaCreacion, fechaActualizacion
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    
-    const params = [
-      finalId,
-      animal.siniga,
-      animal.nombre,
-      animal.madre || null,
-      animal.padre || null,
-      animal.fechaNacimiento,
-      animal.edad || '',
-      animal.sexo,
-      animal.estado,
-      animal.peso,
-      animal.observaciones || '',
-      animal.fechaCreacion || new Date().toISOString(),
-      animal.fechaActualizacion || new Date().toISOString()
-    ];
-    
-    console.log('📝 Ejecutando inserción...');
-    const result = await this.executeQuery(sql, params);
-    
-    // CORRECCIÓN: Usar la propiedad correcta
-    const changes = result.changes?.changes || 0;
-    
-    if (changes > 0) {
-      console.log(`✅ Animal insertado: ${animal.nombre} (ID: ${finalId})`);
-      return true;
-    } else {
-      console.log('❌ No se insertó ningún registro. Resultado:', result);
-      return false;
+    try {
+        // VERIFICAR QUE SINIGA NO ESTÉ VACÍO
+        if (!animal.siniga || animal.siniga.trim() === '') {
+            console.log('❌ SINIGA es requerido');
+            return false;
+        }
+
+        console.log('🔴 Verificando SINIGA único:', animal.siniga);
+        const existing = await this.db!.query( // CORREGIDO: this.db en lugar de this.db1
+            "SELECT id FROM animals WHERE siniga = ?",
+            [animal.siniga]
+        );
+
+        if (existing.values && existing.values.length > 0) {
+            console.log('❌ Ya existe un animal con SINIGA:', animal.siniga);
+            return false;
+        }
+
+        const finalId = animal.id || await this.generateSequentialId(); // Usar ID secuencial
+        
+        const sql = `
+            INSERT INTO animals (
+                id, siniga, nombre, madre, padre, fechaNacimiento, edad, sexo,
+                estado, peso, observaciones, fechaCreacion, fechaActualizacion
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const params = [
+            finalId,
+            animal.siniga,
+            animal.nombre,
+            animal.madre || null,
+            animal.padre || null,
+            animal.fechaNacimiento,
+            animal.edad || "",
+            animal.sexo,
+            animal.estado,
+            animal.peso,
+            animal.observaciones || "",
+            animal.fechaCreacion || new Date().toISOString(),
+            animal.fechaActualizacion || new Date().toISOString(),
+        ];
+
+        console.log('🟢 Ejecutando inserción...');
+        const result = await this.executeQuery(sql, params);
+        const changes = result.changes?.changes || 0;
+
+        if (changes > 0) {
+            console.log(`✅ Animal insertado: ${animal.nombre} (ID: ${finalId}, SINIGA: ${animal.siniga})`);
+            return true;
+        } else {
+            console.log('⚠️ No se insertó ningún registro. Resultado:', result);
+            return false;
+        }
+    } catch (error) {
+        console.error("❌ Error insertando animal:", error);
+        return false;
     }
-  } catch (error) {
-    console.error("❌ Error insertando animal:", error);
-    return false;
-  }
 }
 
 //generar Ziniga 

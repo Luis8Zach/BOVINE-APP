@@ -3,6 +3,7 @@ import { ReportService } from '../services/report.service';
 import { DatabaseService } from '../services/database.service'; 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { IonSegment, IonSegmentButton } from '@ionic/angular/standalone';
 import { 
   IonHeader, 
   IonToolbar, 
@@ -56,19 +57,28 @@ interface Evento {
   fecha: string;
   animalId: string;
   animalNombre: string;
-  tipo: "Celo" | "Vacunación" | "Inseminación" | "Parto";
+  tipo: "Celo" | "Vacunación" | "Inseminación" | "Parto" | "Secado" | "Reto" | "Test Preñez" | "Revisión";
   estado: "Programado" | "Realizado" | "Pendiente" | "Alerta";
   notas: string;
   fechaCreacion: string;
   recordatorio?: boolean;
+  diasPostParto?: number; // Nuevo campo para seguimiento
+  protocoloParto?: boolean; // Indicar si es evento generado por protocolo
 }
 
 interface Animal {
   id: string;
   nombre: string;
   sexo: "Hembra" | "Macho";
-  siniga?: string; // Añadido para compatibilidad
-  edad?: string;   // Añadido para compatibilidad
+  siniga?: string;
+  edad?: string;
+  // Nuevos campos para seguimiento reproductivo
+  ultimoParto?: string;
+  estadoReproductivo?: "Limpia" | "Sucia" | "A calor" | "Vacia" | "Preñada" | "Seca" | "Reto";
+  diasPostParto?: number;
+  ultimaMonta?: string;
+  ultimaInseminacion?: string;
+  raza?: "Angus" | "Holstein" | "Jersey" | "Hereford" | "Charoláis" | "Simental";
 }
 
 interface CalendarDay {
@@ -105,7 +115,9 @@ interface CalendarDay {
     IonCol,
     IonItem,
     IonLabel,
-    IonInput
+    IonInput,
+    IonSegment,        // <- Agregar esta línea
+    IonSegmentButton   // <- Agregar esta línea
   ]
 })
 export class Tab3Page implements OnInit {
@@ -134,6 +146,39 @@ export class Tab3Page implements OnInit {
   selectedDay: CalendarDay | null = null;
   calendarDays: CalendarDay[] = [];
   weekDays = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+
+  // Nuevas propiedades para el ciclo reproductivo
+  animalesEnCiclo = 0;
+  selectedAnimalFilter = "Todos";
+  generarProtocoloParto = true;
+
+  // Modales para parto y reproducción
+  isPartoModalOpen = false;
+  isReproduccionModalOpen = false;
+  isEstadoModalOpen = false;
+
+  // Datos para el formulario de parto
+  partoData = {
+    animalId: '',
+    fecha: this.getLocalDateString(new Date()),
+    raza: 'Angus',
+    observaciones: ''
+  };
+
+  // Datos para el formulario de reproducción
+  reproduccionData = {
+    tipo: 'Monta natural',
+    animalId: '',
+    fecha: this.getLocalDateString(new Date()),
+    semental: '',
+    observaciones: ''
+  };
+
+  // Filtro de animales hembras
+  get animalsHembras(): Animal[] {
+    return this.animals.filter(animal => animal.sexo === 'Hembra');
+  }
 
   constructor(
     private alertController: AlertController,
@@ -387,23 +432,33 @@ debugModalState() {
   }
 
   updateStats() {
-    this.totalEventos = this.eventos.length;
-    this.eventosPendientes = this.eventos.filter((e) => 
-      e.estado === "Pendiente" || e.estado === "Programado").length;
-    
-    const today = this.getLocalDateString(new Date());
-    this.eventosHoy = this.eventos.filter((e) => e.fecha === today).length;
-  }
+  this.totalEventos = this.eventos.length;
+  this.eventosPendientes = this.eventos.filter((e) =>
+    e.estado === "Pendiente" || e.estado === "Programado").length;
+  
+  const today = this.getLocalDateString(new Date());
+  this.eventosHoy = this.eventos.filter((e) => e.fecha === today).length;
+  
+  // Calcular animales en ciclo reproductivo
+  this.animalesEnCiclo = this.animalsHembras.filter(animal => 
+    animal.ultimoParto && 
+    animal.diasPostParto && 
+    animal.diasPostParto > 0 && 
+    animal.diasPostParto < 300
+  ).length;
+}
 
   applyFilters() {
-    this.filteredEventos = this.eventos.filter((evento) => {
-      const matchesTipo = this.selectedTipoFilter === "Todos" || evento.tipo === this.selectedTipoFilter;
-      const matchesEstado = this.selectedEstadoFilter === "Todos" || evento.estado === this.selectedEstadoFilter;
-      return matchesTipo && matchesEstado;
-    });
+  this.filteredEventos = this.eventos.filter((evento) => {
+    const matchesTipo = this.selectedTipoFilter === "Todos" || evento.tipo === this.selectedTipoFilter;
+    const matchesEstado = this.selectedEstadoFilter === "Todos" || evento.estado === this.selectedEstadoFilter;
+    const matchesAnimal = this.selectedAnimalFilter === "Todos" || evento.animalId === this.selectedAnimalFilter;
+    
+    return matchesTipo && matchesEstado && matchesAnimal;
+  });
 
-    this.filteredEventos.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-  }
+  this.filteredEventos.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+}
 
   onTipoFilterChange(event: any) {
     this.selectedTipoFilter = event.detail.value;
@@ -723,19 +778,18 @@ private hasEventChanged(evento1: any, evento2: any): boolean {
   }
 
   getEventColor(tipo: string): string {
-    switch (tipo) {
-      case "Celo":
-        return "#eb445a";
-      case "Vacunación":
-        return "#3880ff";
-      case "Inseminación":
-        return "#2dd36f";
-      case "Parto":
-        return "#ffc409";
-      default:
-        return "#92949c";
-    }
+  switch (tipo) {
+    case "Celo": return "#eb445a";
+    case "Vacunación": return "#3880ff";
+    case "Inseminación": return "#2dd36f";
+    case "Parto": return "#ffc409";
+    case "Secado": return "#ff6b35";
+    case "Reto": return "#9c27b0";
+    case "Test Preñez": return "#00bcd4";
+    case "Revisión": return "#ff9800";
+    default: return "#92949c";
   }
+}
 
   getEventIcon(tipo: string): string {
     switch (tipo) {
@@ -1005,6 +1059,269 @@ private async migrateEventsToDatabase(): Promise<void> {
 
     await toast.present();
   }
+
+//Metodo post Parto 
+// Método para registrar un parto y generar automáticamente el ciclo completo
+async registrarParto(animal: Animal, fechaParto: string, observaciones?: string) {
+  // 1. Registrar el evento de parto
+  const eventoParto: Evento = {
+    id: `parto-${Date.now()}`,
+    fecha: fechaParto,
+    animalId: animal.id,
+    animalNombre: animal.nombre,
+    tipo: "Parto",
+    estado: "Realizado",
+    notas: observaciones || 'Parto registrado',
+    fechaCreacion: this.getLocalDateString(new Date()),
+    protocoloParto: true,
+    diasPostParto: 0
+  };
+
+  this.eventos.push(eventoParto);
+
+  // 2. Actualizar información del animal
+  animal.ultimoParto = fechaParto;
+  animal.diasPostParto = 0;
+  animal.estadoReproductivo = "Limpia";
+
+  // 3. Generar eventos automáticos del protocolo
+  await this.generarEventosProtocoloParto(animal, fechaParto);
+
+  await this.saveEventsToDatabase();
+  this.updateStats();
+  this.applyFilters();
+  this.generateCalendar();
+}
+
+// Generar todos los eventos del protocolo de parto
+private async generarEventosProtocoloParto(animal: Animal, fechaParto: string) {
+  const fechaBase = new Date(fechaParto + 'T12:00:00');
+  
+  // Día 7 - Revisión post-parto
+  this.crearEventoProtocolo(animal, 7, "Revisión", "Revisión post-parto - Evaluar condición uterina");
+
+  // Día 26 - Primer celo (Amarillo)
+  this.crearEventoProtocolo(animal, 26, "Celo", "Primer celo post-parto - Indicador amarillo", "Pendiente");
+
+  // Día 52 - Segundo celo (Verde)
+  this.crearEventoProtocolo(animal, 52, "Celo", "Segundo celo post-parto - Indicador verde", "Programado");
+
+  // Día 85 - Diagnóstico de vacía
+  this.crearEventoProtocolo(animal, 85, "Revisión", "Diagnóstico de vacía - Evaluar condición reproductiva", "Programado");
+}
+
+// Crear evento individual del protocolo
+private crearEventoProtocolo(animal: Animal, diasPostParto: number, tipo: Evento['tipo'], notas: string, estado: Evento['estado'] = "Programado") {
+  const fechaBase = new Date(animal.ultimoParto + 'T12:00:00');
+  const fechaEvento = new Date(fechaBase);
+  fechaEvento.setDate(fechaBase.getDate() + diasPostParto);
+
+  const evento: Evento = {
+    id: `${tipo.toLowerCase()}-${animal.id}-${diasPostParto}-${Date.now()}`,
+    fecha: this.getLocalDateString(fechaEvento),
+    animalId: animal.id,
+    animalNombre: animal.nombre,
+    tipo: tipo,
+    estado: estado,
+    notas: notas,
+    fechaCreacion: this.getLocalDateString(new Date()),
+    protocoloParto: true,
+    diasPostParto: diasPostParto
+  };
+
+  this.eventos.push(evento);
+}
+
+// Método para registrar monta natural o inseminación
+async registrarReproduccion(animal: Animal, tipo: "Monta natural" | "Inseminación", fecha: string, semental?: string) {
+  const evento: Evento = {
+    id: `repro-${tipo.toLowerCase()}-${Date.now()}`,
+    fecha: fecha,
+    animalId: animal.id,
+    animalNombre: animal.nombre,
+    tipo: tipo === "Monta natural" ? "Celo" : "Inseminación",
+    estado: "Realizado",
+    notas: `${tipo} ${semental ? 'con ' + semental : ''}`,
+    fechaCreacion: this.getLocalDateString(new Date()),
+    protocoloParto: true
+  };
+
+  this.eventos.push(evento);
+
+  // Actualizar animal
+  if (tipo === "Monta natural") {
+    animal.ultimaMonta = fecha;
+  } else {
+    animal.ultimaInseminacion = fecha;
+  }
+
+  // Generar próximos eventos reproductivos
+  await this.generarEventosPostReproduccion(animal, fecha);
+
+  await this.saveEventsToDatabase();
+  this.updateStats();
+  this.applyFilters();
+  this.generateCalendar();
+}
+
+//Mtodo para el parto 
+// Métodos para abrir/cerrar modales
+openPartoModal() {
+  this.partoData = {
+    animalId: '',
+    fecha: this.getLocalDateString(new Date()),
+    raza: 'Angus',
+    observaciones: ''
+  };
+  this.isPartoModalOpen = true;
+}
+
+closePartoModal() {
+  this.isPartoModalOpen = false;
+}
+
+openReproduccionModal() {
+  this.reproduccionData = {
+    tipo: 'Monta natural',
+    animalId: '',
+    fecha: this.getLocalDateString(new Date()),
+    semental: '',
+    observaciones: ''
+  };
+  this.isReproduccionModalOpen = true;
+}
+
+closeReproduccionModal() {
+  this.isReproduccionModalOpen = false;
+}
+
+openEstadoModal() {
+  // Implementar lógica para cambiar estado reproductivo
+  this.showToast('Función de cambio de estado en desarrollo', 'warning');
+}
+
+// Filtro por animal
+onAnimalFilterChange(event: any) {
+  this.selectedAnimalFilter = event.detail.value;
+  this.applyFilters();
+}
+
+// Método para confirmar parto
+async confirmarParto() {
+  if (!this.partoData.animalId || !this.partoData.fecha) {
+    await this.showToast('Por favor complete todos los campos requeridos', 'warning');
+    return;
+  }
+
+  const animal = this.animals.find(a => a.id === this.partoData.animalId);
+  if (!animal) {
+    await this.showToast('Animal no encontrado', 'danger');
+    return;
+  }
+
+  await this.registrarParto(animal, this.partoData.fecha, this.partoData.observaciones);
+  this.isPartoModalOpen = false;
+}
+
+// Método para confirmar reproducción
+async confirmarReproduccion() {
+  if (!this.reproduccionData.animalId || !this.reproduccionData.fecha) {
+    await this.showToast('Por favor complete todos los campos requeridos', 'warning');
+    return;
+  }
+
+  const animal = this.animals.find(a => a.id === this.reproduccionData.animalId);
+  if (!animal) {
+    await this.showToast('Animal no encontrado', 'danger');
+    return;
+  }
+
+  await this.registrarReproduccion(
+    animal, 
+    this.reproduccionData.tipo as "Monta natural" | "Inseminación", 
+    this.reproduccionData.fecha, 
+    this.reproduccionData.semental
+  );
+  this.isReproduccionModalOpen = false;
+}
+
+//----------------------------------------Privates----------------------------------------------------------------------------//
+
+// Generar eventos después de la reproducción
+private async generarEventosPostReproduccion(animal: Animal, fechaReproduccion: string) {
+  const fechaBase = new Date(fechaReproduccion + 'T12:00:00');
+  
+  // Próximo celo a los 21 días
+  this.crearEventoProtocolo(animal, 21, "Celo", "Próximo celo estimado", "Programado");
+
+  // Test de preñez 1 a los 35 días
+  this.crearEventoProtocolo(animal, 35, "Test Preñez", "Primer diagnóstico de gestación", "Programado");
+
+  // Test de preñez 2 a los 90 días
+  this.crearEventoProtocolo(animal, 90, "Test Preñez", "Segundo diagnóstico de gestación", "Programado");
+
+  // Test de preñez 3 a los 180 días
+  this.crearEventoProtocolo(animal, 180, "Test Preñez", "Tercer diagnóstico de gestación", "Programado");
+
+  // Secado a los 220 días
+  this.crearEventoProtocolo(animal, 220, "Secado", "Inicio de período de secado", "Programado");
+
+  // Reto a los 259 días
+  this.crearEventoProtocolo(animal, 259, "Reto", "Preparación para parto", "Programado");
+
+  // Parto estimado (depende de la raza)
+  const diasGestacion = this.obtenerDiasGestacion(animal.raza);
+  this.crearEventoProtocolo(animal, diasGestacion, "Parto", "Parto estimado", "Programado");
+}
+
+// Obtener días de gestación según raza
+private obtenerDiasGestacion(raza?: string): number {
+  const razas = {
+    'Angus': 278,
+    'Holstein': 279,
+    'Jersey': 279,
+    'Hereford': 285,
+    'Charoláis': 286,
+    'Simental': 289
+  };
+  
+  return razas[raza as keyof typeof razas] || 280; // Default 280 días
+}
+
+// Método para actualizar estado reproductivo del animal
+actualizarEstadoReproductivo(animal: Animal, nuevoEstado: Animal['estadoReproductivo'], observaciones?: string) {
+  animal.estadoReproductivo = nuevoEstado;
+  
+  // Registrar evento de cambio de estado
+  const evento: Evento = {
+    id: `estado-${Date.now()}`,
+    fecha: this.getLocalDateString(new Date()),
+    animalId: animal.id,
+    animalNombre: animal.nombre,
+    tipo: "Revisión",
+    estado: "Realizado",
+    notas: `Cambio de estado: ${nuevoEstado}. ${observaciones || ''}`,
+    fechaCreacion: this.getLocalDateString(new Date())
+  };
+
+  this.eventos.push(evento);
+}
+
+// Método para actualizar días post-parto automáticamente
+actualizarDiasPostParto() {
+  const hoy = new Date();
+  this.animals.forEach(animal => {
+    if (animal.ultimoParto) {
+      const ultimoPartoDate = new Date(animal.ultimoParto + 'T12:00:00');
+      const diffTime = hoy.getTime() - ultimoPartoDate.getTime();
+      animal.diasPostParto = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+  });
+
+  
+  
+}
+
 }
 
 export default Tab3Page;

@@ -1413,3 +1413,15 @@ ion-item {
   --spinner-color: #ffffff;
   color: #ffffff;
 }
+
+//estilos para resaltar los eventos 
+.event-due {
+  border-left: 4px solid #ff0000 !important;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}

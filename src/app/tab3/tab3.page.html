@@ -534,8 +534,9 @@
                 <ion-item>
                   <ion-label position="stacked">Animal *</ion-label>
                   <ion-select [(ngModel)]="partoData.animalId" interface="alert">
-                    <ion-select-option *ngFor="let animal of animalsHembras" [value]="animal.id">
-                      {{ animal.nombre }} ({{ animal.id }})
+                    <ion-select-option *ngFor="let animal of animalsHembrasReproductivas" [value]="animal.id">
+                      {{ animal.nombre }} ({{ animal.id }}) - {{ animal.estadoReproductivo }}
+                      <span *ngIf="animal.ultimoParto"> - DPP: {{ animal.diasPostParto }}</span>
                     </ion-select-option>
                   </ion-select>
                 </ion-item>
@@ -668,10 +669,13 @@
               <ion-col size="6">
                 <ion-item>
                   <ion-label position="stacked">Semental</ion-label>
-                  <ion-input 
-                    [(ngModel)]="reproduccionData.semental"
-                    placeholder="Nombre del semental">
-                  </ion-input>
+                  <ion-select [(ngModel)]="reproduccionData.semental" interface="alert">
+                    <ion-select-option value="">Seleccionar semental</ion-select-option>
+                    <ion-select-option *ngFor="let macho of animalsMachosReproductivos" [value]="macho.nombre">
+                      {{ macho.nombre }} ({{ macho.id }})
+                      <span *ngIf="macho.edad"> - {{ macho.edad }}</span>
+                    </ion-select-option>
+                  </ion-select>
                 </ion-item>
               </ion-col>
             </ion-row>

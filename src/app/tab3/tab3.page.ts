@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ReportService } from '../services/report.service';
 import { DatabaseService } from '../services/database.service'; 
 import { CommonModule } from '@angular/common';
@@ -62,8 +62,8 @@ interface Evento {
   notas: string;
   fechaCreacion: string;
   recordatorio?: boolean;
-  diasPostParto?: number; // Nuevo campo para seguimiento
-  protocoloParto?: boolean; // Indicar si es evento generado por protocolo
+  diasPostParto?: number;
+  protocoloParto?: boolean;
 }
 
 interface Animal {
@@ -72,13 +72,14 @@ interface Animal {
   sexo: "Hembra" | "Macho";
   siniga?: string;
   edad?: string;
-  // Nuevos campos para seguimiento reproductivo
   ultimoParto?: string;
   estadoReproductivo?: "Limpia" | "Sucia" | "A calor" | "Vacia" | "Preñada" | "Seca" | "Reto";
   diasPostParto?: number;
   ultimaMonta?: string;
   ultimaInseminacion?: string;
   raza?: "Angus" | "Holstein" | "Jersey" | "Hereford" | "Charoláis" | "Simental";
+  edadMeses?: number;
+  activoReproduccion?: boolean;
 }
 
 interface CalendarDay {
@@ -116,18 +117,31 @@ interface CalendarDay {
     IonItem,
     IonLabel,
     IonInput,
-    IonSegment,        // <- Agregar esta línea
-    IonSegmentButton   // <- Agregar esta línea
+    IonSegment,
+    IonSegmentButton
   ]
 })
-export class Tab3Page implements OnInit {
+export class Tab3Page implements OnInit, OnDestroy {
   eventos: Evento[] = [];
   filteredEventos: Evento[] = [];
   animals: Animal[] = [];
 
+  // Constantes para edades reproductivas
+  private readonly EDADES_REPRODUCTIVAS = {
+    HEMBRA: {
+      MINIMA: 15,
+      MAXIMA: 144
+    },
+    MACHO: {
+      MINIMA: 12,
+      MAXIMA: 120
+    }
+  };
+
   // Filtros
   selectedTipoFilter = "Todos";
   selectedEstadoFilter = "Todos";
+  selectedAnimalFilter = "Todos";
   viewMode = "list";
 
   // Modal para agregar/editar evento
@@ -147,10 +161,8 @@ export class Tab3Page implements OnInit {
   calendarDays: CalendarDay[] = [];
   weekDays = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
-
   // Nuevas propiedades para el ciclo reproductivo
   animalesEnCiclo = 0;
-  selectedAnimalFilter = "Todos";
   generarProtocoloParto = true;
 
   // Modales para parto y reproducción
@@ -175,11 +187,6 @@ export class Tab3Page implements OnInit {
     observaciones: ''
   };
 
-  // Filtro de animales hembras
-  get animalsHembras(): Animal[] {
-    return this.animals.filter(animal => animal.sexo === 'Hembra');
-  }
-
   constructor(
     private alertController: AlertController,
     private toastController: ToastController,
@@ -188,7 +195,7 @@ export class Tab3Page implements OnInit {
     private dataShareService: DataShareService,
     private databaseService: DatabaseService,
     private reportService: ReportService,
-  private loadingController: LoadingController // Añade esto
+    private loadingController: LoadingController
   ) {
     addIcons({
       calendarOutline,
@@ -212,78 +219,727 @@ export class Tab3Page implements OnInit {
     });
   }
 
-   //método temporal para debug
-debugModalState() {
-  console.log('Modal state - isOpen:', this.isModalOpen);
-  console.log('Modal state - isEditMode:', this.isEditMode);
-  console.log('Modal state - currentEvento:', this.currentEvento);
-}
-
   async ngOnInit() {
-  await this.loadAnimals();
-  await this.loadEventsFromDatabase(); // Solo BD
-  this.updateStats();
-  this.applyFilters();
-  this.generateCalendar();
-  localStorage.removeItem('eventosTab3');
-  localStorage.removeItem('notificacionesVistas');
-  
-  console.log('🧹 Datos antiguos de localStorage limpiados');
-}
-
-  // Cargar eventos desde localStorage
-  private loadEventsFromStorage() {
-    const eventosGuardados = localStorage.getItem('eventosTab3');
-    this.eventos = eventosGuardados ? JSON.parse(eventosGuardados) : [];
+    console.log('🔄 Tab3 - Inicializando...');
+    await this.inicializarDatos();
   }
 
-  // Guardar eventos en localStorage
- private async saveEventsToStorage() {
-  try {
-    // 1. Primero guardar en la base de datos
-    await this.syncEventsToDatabase();
+  async inicializarDatos() {
+    try {
+      await this.loadAnimals();
+      await this.loadEventsFromDatabase();
+      this.updateStats();
+      this.applyFilters();
+      this.generateCalendar();
+      
+      await this.verificarDatosCriticos();
+      
+    } catch (error) {
+      console.error('❌ Error en inicialización:', error);
+      await this.showToast('Error cargando datos', 'danger');
+    }
+  }
+
+  async verificarDatosCriticos() {
+    console.log('🔍 Verificando datos críticos...');
     
-    // 2. Luego actualizar localStorage con los datos de la BD
-    // (esto asegura que siempre estén sincronizados)
-    const dbEventos = await this.databaseService.getAllEventos();
-    if (dbEventos && dbEventos.length > 0) {
-      localStorage.setItem('eventosTab3', JSON.stringify(dbEventos));
-      this.eventos = dbEventos; // Actualizar el array local
+    const animalesSinEdad = this.animals.filter(a => !a.edadMeses || a.edadMeses === 0);
+    if (animalesSinEdad.length > 0) {
+      console.warn('⚠️ Animales sin edad:', animalesSinEdad);
+      await this.corregirEdadesAnimales();
     }
     
-    // 3. Notificar a Tab1 que los datos han cambiado
-    this.dataShareService.notifyDataUpdate();
-    
-  } catch (error) {
-    console.error('❌ Error guardando eventos:', error);
-    // Fallback: guardar solo en localStorage
-    localStorage.setItem('eventosTab3', JSON.stringify(this.eventos));
+    await this.debugAnimalData();
   }
+
+  async corregirEdadesAnimales() {
+    console.log('🛠️ Corrigiendo edades de animales...');
+    
+    this.animals = this.animals.map(animal => {
+      let edadMeses = animal.edadMeses;
+      
+      if (!edadMeses || edadMeses === 0) {
+        const esHembra = animal.sexo === 'Hembra';
+        const esMacho = animal.sexo === 'Macho';
+        const ultimoCaracter = animal.id.slice(-1);
+        const edadBase = parseInt(ultimoCaracter) || 1;
+        
+        if (esHembra) {
+          edadMeses = 24 + (edadBase * 6);
+        } else if (esMacho) {
+          edadMeses = 36 + (edadBase * 6);
+        } else {
+          edadMeses = 24;
+        }
+        
+        console.log(`📅 Corrigiendo edad de ${animal.nombre}: ${edadMeses} meses`);
+      }
+      
+      return {
+        ...animal,
+        edadMeses: edadMeses,
+        activoReproduccion: animal.activoReproduccion ?? true,
+        estadoReproductivo: animal.estadoReproductivo ?? (animal.sexo === 'Hembra' ? 'Limpia' : undefined)
+      };
+    });
+    
+    await this.guardarCorreccionesEnBD();
+  }
+
+  async guardarCorreccionesEnBD() {
+    try {
+      console.log('💾 Guardando correcciones en BD...');
+      for (const animal of this.animals) {
+        // Crear un objeto compatible con la interfaz del DatabaseService
+        const animalParaBD = {
+          ...animal,
+          // Agregar campos requeridos por DatabaseService.Animal
+          siniga: animal.siniga || '',
+          madre: '',
+          padre: '',
+          fechaNacimiento: new Date().toISOString().split('T')[0],
+          edad: animal.edad || '',
+          estado: 'Bueno' as const,
+          observaciones: '',
+          fechaCreacion: new Date().toISOString(),
+          fechaActualizacion: new Date().toISOString()
+        };
+        await this.databaseService.updateAnimal(animalParaBD);
+      }
+      console.log('✅ Correcciones guardadas');
+    } catch (error) {
+      console.error('❌ Error guardando correcciones:', error);
+    }
+  }
+
+  // Filtros de animales CORREGIDOS
+  get animalsHembras(): Animal[] {
+    const hembras = this.animals.filter(animal => animal.sexo === 'Hembra');
+    console.log('🔍 Hembras encontradas:', hembras.length);
+    return hembras;
+  }
+
+  get animalsHembrasReproductivas(): Animal[] {
+    const hembrasReproductivas = this.animalsHembras.filter(animal => {
+      if (!this.tieneDatosReproductivos(animal)) {
+        console.log(`❌ Hembra ${animal.nombre} excluida: falta datos reproductivos`);
+        return false;
+      }
+      
+      const cond1 = animal.activoReproduccion !== false;
+      const cond2 = animal.estadoReproductivo !== "Seca";
+      const cond3 = animal.estadoReproductivo !== "Reto";
+      
+      const edadMeses = animal.edadMeses || 0;
+      const cond4 = edadMeses >= this.EDADES_REPRODUCTIVAS.HEMBRA.MINIMA && 
+                   edadMeses <= this.EDADES_REPRODUCTIVAS.HEMBRA.MAXIMA;
+      
+      const esValida = cond1 && cond2 && cond3 && cond4;
+      
+      console.log(`🔍 Hembra ${animal.nombre}: ${edadMeses} meses, válida=${esValida}`);
+      
+      return esValida;
+    });
+    
+    console.log('✅ Hembras reproductivas finales:', hembrasReproductivas.length);
+    return hembrasReproductivas;
+  }
+
+ // TEMPORAL: Getter menos restrictivo para debug
+get animalsMachosReproductivos(): Animal[] {
+  const machosReproductivos = this.animals.filter(animal => {
+    if (animal.sexo !== "Macho") return false;
+    
+    // Verificación básica sin filtros estrictos temporalmente
+    const cond1 = animal.activoReproduccion !== false;
+    const edadMeses = animal.edadMeses || 0;
+    const cond2 = edadMeses >= 12; // Mínimo 1 mes temporalmente para debug
+    
+    console.log(`🔍 Macho ${animal.nombre}: activo=${cond1}, edadOk=${cond2} (${edadMeses} meses)`);
+    
+    return cond1 && cond2;
+  });
+  
+  console.log('✅ Machos reproductivos (debug):', machosReproductivos.length, machosReproductivos);
+  return machosReproductivos;
 }
+  get animalsMachos(): Animal[] {
+    const machos = this.animals.filter(animal => animal.sexo === "Macho");
+    console.log('🔍 Todos los machos:', machos.length);
+    return machos;
+  }
 
+  private tieneDatosReproductivos(animal: Animal): boolean {
+    return !!(animal.edadMeses && animal.edadMeses > 0 && animal.estadoReproductivo);
+  }
 
-  // Método para obtener animales por defecto
+  // Métodos del ciclo de vida
+  ionViewWillEnter() {
+    console.log('🔄 Tab3 - Recargando datos...');
+    this.inicializarDatos();
+  }
+
+  ngOnDestroy() {
+    console.log('🧹 Tab3 - Limpiando...');
+  }
+
+  // Métodos para cargar datos
+  async loadAnimals() {
+    try {
+      console.log('🐄 Cargando animales desde base de datos...');
+      
+      const dbStatus = await this.databaseService.getDatabaseStatus();
+      if (!dbStatus.isReady) {
+        console.log('🔄 Base de datos no está lista, inicializando...');
+        const initialized = await this.databaseService.initializeDatabase();
+        if (!initialized) {
+          throw new Error('No se pudo inicializar la base de datos');
+        }
+      }
+
+      const dbAnimals = await this.databaseService.getAllAnimals();
+      if (dbAnimals && dbAnimals.length > 0) {
+        this.animals = dbAnimals;
+        console.log(`✅ ${dbAnimals.length} animales cargados desde BD`);
+      } else {
+        console.log('⚠️ Usando animales por defecto');
+        this.animals = this.getDefaultAnimals();
+      }
+      
+    } catch (error) {
+      console.error('❌ Error cargando animales:', error);
+      this.animals = this.getDefaultAnimals();
+    }
+  }
+
   private getDefaultAnimals(): Animal[] {
     return [
-      { id: "H001", nombre: "Paloma", sexo: "Hembra" },
-      { id: "H002", nombre: "Estrella", sexo: "Hembra" },
-      { id: "M001", nombre: "Toro Bravo", sexo: "Macho" },
-      { id: "H003", nombre: "Bonita", sexo: "Hembra" },
-      { id: "M002", nombre: "Torito", sexo: "Macho" },
-      { id: "H004", nombre: "Carmen", sexo: "Hembra" },
-      { id: "H005", nombre: "Rosa", sexo: "Hembra" },
-      { id: "H006", nombre: "Dulce", sexo: "Hembra" },
-      { id: "H007", nombre: "Flor", sexo: "Hembra" },
-      { id: "H008", nombre: "Bella", sexo: "Hembra" }
+      { 
+        id: "H001", 
+        nombre: "Paloma", 
+        sexo: "Hembra", 
+        edadMeses: 36, 
+        activoReproduccion: true, 
+        estadoReproductivo: "Limpia" 
+      },
+      { 
+        id: "H002", 
+        nombre: "Estrella", 
+        sexo: "Hembra", 
+        edadMeses: 24, 
+        activoReproduccion: true, 
+        estadoReproductivo: "Limpia" 
+      },
+      { 
+        id: "M001", 
+        nombre: "Toro Bravo", 
+        sexo: "Macho", 
+        edadMeses: 48, 
+        activoReproduccion: true, 
+        estadoReproductivo: "Limpia" 
+      },
+      { 
+        id: "H003", 
+        nombre: "Bonita", 
+        sexo: "Hembra", 
+        edadMeses: 18, 
+        activoReproduccion: true, 
+        estadoReproductivo: "Limpia" 
+      },
+      { 
+        id: "M002", 
+        nombre: "Torito", 
+        sexo: "Macho", 
+        edadMeses: 60, 
+        activoReproduccion: true, 
+        estadoReproductivo: "Limpia" 
+      }
     ];
   }
 
-  // Función auxiliar para crear fechas locales sin problemas de zona horaria
+  // ========== MÉTODOS FALTANTES AGREGADOS ==========
+
+  // Métodos para reportes
+  async mostrarOpcionesReporte() {
+    const alert = await this.alertController.create({
+      header: 'Generar Reporte',
+      message: 'Seleccione el tipo de reporte:',
+      buttons: [
+        {
+          text: 'Semana Actual (PDF)',
+          handler: () => this.generarReporteSemanal('actual', 'pdf')
+        },
+        {
+          text: 'Semana Actual (Excel)',
+          handler: () => this.generarReporteSemanal('actual', 'excel')
+        },
+        {
+          text: 'Semana Pasada (PDF)',
+          handler: () => this.generarReporteSemanal('pasada', 'pdf')
+        },
+        {
+          text: 'Semana Pasada (Excel)',
+          handler: () => this.generarReporteSemanal('pasada', 'excel')
+        },
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async generarReporteSemanal(tipo: string, formato: string) {
+    let rango: any;
+    
+    if (tipo === 'actual') {
+      rango = this.reportService.getSemanaActual();
+    } else {
+      rango = this.reportService.getSemanaPasada();
+    }
+
+    const loading = await this.showLoading('Generando reporte...');
+    
+    try {
+      const reporte = await this.reportService.generarReporteSemanal(
+        rango.inicio, 
+        rango.fin
+      );
+
+      if (formato === 'pdf') {
+        await this.reportService.generarPDF(reporte);
+      } else {
+        await this.reportService.generarExcel(reporte);
+      }
+
+      await loading.dismiss();
+      await this.showToast('Reporte generado exitosamente', 'success');
+      
+    } catch (error) {
+      await loading.dismiss();
+      console.error('Error generando reporte:', error);
+      await this.showToast('Error al generar el reporte', 'danger');
+    }
+  }
+
+  private async showLoading(message: string): Promise<HTMLIonLoadingElement> {
+    const loading = await this.loadingController.create({ 
+      message,
+      duration: 30000,
+      spinner: 'crescent'
+    });
+    await loading.present();
+    return loading;
+  }
+
+  // Métodos para logout
+  async logout() {
+    const alert = await this.alertController.create({
+      header: "Cerrar Sesión",
+      message: "¿Estás seguro de que deseas cerrar sesión?<br><br>Se perderán los datos no guardados.",
+      cssClass: "custom-alert",
+      buttons: [
+        {
+          text: "Cancelar",
+          role: "cancel",
+          cssClass: "alert-button-cancel",
+          handler: () => {
+            console.log("Logout cancelado");
+          },
+        },
+        {
+          text: "Aceptar",
+          cssClass: "alert-button-confirm",
+          handler: () => {
+            this.authService.logout();
+            this.router.navigate(['/login'], { replaceUrl: true });
+          },
+        },
+      ]
+    });
+
+    await alert.present();
+  }
+
+  // Métodos para eventos
+  async markAsCompleted(evento: Evento) {
+    const index = this.eventos.findIndex((e) => e.id === evento.id);
+    if (index !== -1) {
+      this.eventos[index].estado = "Realizado";
+      
+      await this.saveEventsToDatabase();
+      
+      this.updateStats();
+      this.applyFilters();
+      this.generateCalendar();
+      await this.showToast(`${evento.tipo} marcado como realizado`, "success");
+    }
+  }
+
+  async confirmDelete(evento: Evento) {
+    const alert = await this.alertController.create({
+      header: "Confirmar Eliminación",
+      message: `¿Estás seguro de que deseas eliminar el evento de <strong>${evento.tipo}</strong> para <strong>${evento.animalNombre}</strong>?<br><br>Esta acción no se puede deshacer.`,
+      cssClass: "custom-alert",
+      buttons: [
+        {
+          text: "Cancelar",
+          role: "cancel",
+          cssClass: "alert-button-cancel",
+          handler: () => {
+            console.log("Eliminación cancelada");
+          },
+        },
+        {
+          text: "Aceptar",
+          cssClass: "alert-button-confirm",
+          handler: () => {
+            this.deleteEvento(evento);
+          }
+        },
+      ],
+    });
+
+    await alert.present();
+  }
+
+  async deleteEvento(evento: Evento) {
+    const index = this.eventos.findIndex((e) => e.id === evento.id);
+    if (index !== -1) {
+      this.eventos.splice(index, 1);
+      
+      try {
+        await this.databaseService.deleteEvento(evento.id);
+        console.log('✅ Evento eliminado de la BD');
+      } catch (error) {
+        console.error('❌ Error eliminando evento de BD:', error);
+      }
+      
+      await this.saveEventsToDatabase();
+      
+      this.updateStats();
+      this.applyFilters();
+      this.generateCalendar();
+      await this.showToast("Evento eliminado correctamente", "success");
+    }
+  }
+
+  // Métodos para modales
+  openEstadoModal() {
+    this.showToast('Función de cambio de estado en desarrollo', 'warning');
+  }
+
+// Métodos para abrir modales
+// Métodos para abrir/cerrar modales
+// Métodos para abrir modales - AGREGAR ESTOS
+openPartoModal() {
+  this.partoData = {
+    animalId: '',
+    fecha: this.getLocalDateString(new Date()),
+    raza: 'Angus',
+    observaciones: ''
+  };
+  
+  console.log('📋 Abriendo modal de parto...');
+  console.log('Hembras reproductivas disponibles:', this.animalsHembrasReproductivas);
+  
+  if (this.animalsHembrasReproductivas.length === 0) {
+    this.showToast('No hay hembras en edad reproductiva disponibles', 'warning');
+  }
+  
+  this.isPartoModalOpen = true;
+}
+
+openReproduccionModal() {
+  this.reproduccionData = {
+    tipo: 'Monta natural',
+    animalId: '',
+    fecha: this.getLocalDateString(new Date()),
+    semental: '',
+    observaciones: ''
+  };
+  
+  console.log('💕 Abriendo modal de reproducción...');
+  
+  // DEBUG: Verificar machos
+  this.debugMachos();
+  
+  console.log('Hembras disponibles:', this.animalsHembras.length);
+  console.log('Machos reproductivos disponibles:', this.animalsMachosReproductivos.length);
+  
+  if (this.animalsHembras.length === 0) {
+    this.showToast('No hay hembras disponibles', 'warning');
+  }
+  if (this.animalsMachosReproductivos.length === 0) {
+    this.showToast('No hay sementales en edad reproductiva disponibles', 'warning');
+  }
+  
+  this.isReproduccionModalOpen = true;
+}
+
+closePartoModal() {
+  this.isPartoModalOpen = false;
+}
+
+
+  closeReproduccionModal() {
+    this.isReproduccionModalOpen = false;
+  }
+
+  onAnimalFilterChange(event: any) {
+    this.selectedAnimalFilter = event.detail.value;
+    this.applyFilters();
+  }
+
+  // Métodos para parto y reproducción
+  async confirmarParto() {
+    if (!this.partoData.animalId || !this.partoData.fecha) {
+      await this.showToast('Complete todos los campos', 'warning');
+      return;
+    }
+
+    const duplicado = await this.validarPartoDuplicado(this.partoData.animalId, this.partoData.fecha);
+    if (duplicado) {
+      await this.showToast('Ya existe un parto registrado para este animal en la misma fecha', 'warning');
+      return;
+    }
+
+    const animal = this.animals.find(a => a.id === this.partoData.animalId);
+    if (!animal) {
+      await this.showToast('Animal no encontrado', 'danger');
+      return;
+    }
+
+    await this.registrarParto(animal, this.partoData.fecha, this.partoData.observaciones);
+    this.isPartoModalOpen = false;
+  }
+
+  async confirmarReproduccion() {
+    if (!this.reproduccionData.animalId || !this.reproduccionData.fecha) {
+      await this.showToast('Por favor complete todos los campos requeridos', 'warning');
+      return;
+    }
+
+    const duplicado = await this.validarReproduccionDuplicada(
+      this.reproduccionData.animalId, 
+      this.reproduccionData.fecha
+    );
+    if (duplicado) {
+      await this.showToast('Ya existe un registro de reproducción para este animal en la misma fecha', 'warning');
+      return;
+    }
+
+    const animal = this.animals.find(a => a.id === this.reproduccionData.animalId);
+    if (!animal) {
+      await this.showToast('Animal no encontrado', 'danger');
+      return;
+    }
+
+    await this.registrarReproduccion(
+      animal, 
+      this.reproduccionData.tipo as "Monta natural" | "Inseminación", 
+      this.reproduccionData.fecha, 
+      this.reproduccionData.semental
+    );
+    this.isReproduccionModalOpen = false;
+  }
+
+  // Métodos de validación
+  async validarPartoDuplicado(animalId: string, fecha: string): Promise<boolean> {
+    const partosExistentes = this.eventos.filter(evento => 
+      evento.animalId === animalId && 
+      evento.tipo === "Parto" && 
+      evento.fecha === fecha
+    );
+    return partosExistentes.length > 0;
+  }
+
+  async validarReproduccionDuplicada(animalId: string, fecha: string): Promise<boolean> {
+    const reproduccionesExistentes = this.eventos.filter(evento => 
+      evento.animalId === animalId && 
+      (evento.tipo === "Celo" || evento.tipo === "Inseminación") && 
+      evento.fecha === fecha
+    );
+    return reproduccionesExistentes.length > 0;
+  }
+
+  // Métodos para base de datos
+  private async loadEventsFromDatabase() {
+    try {
+      this.eventos = await this.databaseService.getAllEventos();
+      console.log(`✅ ${this.eventos.length} eventos cargados desde BD`);
+    } catch (error) {
+      console.error('❌ Error cargando eventos:', error);
+      this.eventos = [];
+    }
+  }
+
+  private async saveEventsToDatabase() {
+    try {
+      console.log('💾 Guardando eventos en base de datos...');
+      
+      const dbReady = await this.databaseService.initializeDatabase();
+      if (!dbReady) {
+        throw new Error('Base de datos no disponible');
+      }
+      
+      for (const evento of this.eventos) {
+        const eventoExistente = await this.databaseService.getEventoById(evento.id);
+        
+        if (eventoExistente) {
+          await this.databaseService.updateEvento(evento);
+        } else {
+          await this.databaseService.insertEvento(evento);
+        }
+      }
+      
+      console.log('✅ Eventos guardados en BD');
+      this.dataShareService.notifyDataUpdate();
+      
+    } catch (error) {
+      console.error('❌ Error guardando eventos en BD:', error);
+      throw error;
+    }
+  }
+
+  // Métodos para parto y reproducción
+  async registrarParto(animal: Animal, fechaParto: string, observaciones?: string) {
+    const eventoParto: Evento = {
+      id: `parto-${Date.now()}`,
+      fecha: fechaParto,
+      animalId: animal.id,
+      animalNombre: animal.nombre,
+      tipo: "Parto",
+      estado: "Realizado",
+      notas: observaciones || 'Parto registrado',
+      fechaCreacion: this.getLocalDateString(new Date()),
+      protocoloParto: true,
+      diasPostParto: 0
+    };
+
+    this.eventos.push(eventoParto);
+
+    animal.ultimoParto = fechaParto;
+    animal.diasPostParto = 0;
+    animal.estadoReproductivo = "Limpia";
+
+    await this.generarEventosProtocoloParto(animal, fechaParto);
+    await this.saveEventsToDatabase();
+    this.updateStats();
+    this.applyFilters();
+    this.generateCalendar();
+  }
+
+  async registrarReproduccion(animal: Animal, tipo: "Monta natural" | "Inseminación", fecha: string, semental?: string) {
+    const evento: Evento = {
+      id: `repro-${tipo.toLowerCase()}-${Date.now()}`,
+      fecha: fecha,
+      animalId: animal.id,
+      animalNombre: animal.nombre,
+      tipo: tipo === "Monta natural" ? "Celo" : "Inseminación",
+      estado: "Realizado",
+      notas: `${tipo} ${semental ? 'con ' + semental : ''}`,
+      fechaCreacion: this.getLocalDateString(new Date()),
+      protocoloParto: true
+    };
+
+    this.eventos.push(evento);
+
+    if (tipo === "Monta natural") {
+      animal.ultimaMonta = fecha;
+    } else {
+      animal.ultimaInseminacion = fecha;
+    }
+
+    await this.generarEventosPostReproduccion(animal, fecha);
+    await this.saveEventsToDatabase();
+    this.updateStats();
+    this.applyFilters();
+    this.generateCalendar();
+  }
+
+
+
+  // ========== MÉTODOS EXISTENTES ==========
+
+// En Tab3Page - Agrega este método para debug
+debugMachos() {
+  console.log('=== 🐂 DEBUG MACHOS ===');
+  
+  // Todos los animales
+  console.log('📊 Total animales:', this.animals.length);
+  console.log('📋 Todos los animales:', this.animals);
+  
+  // Machos
+  console.log('🐂 Total machos:', this.animalsMachos.length);
+  console.log('📋 Todos los machos:', this.animalsMachos);
+  
+  // Machos reproductivos
+  console.log('🔍 Machos reproductivos:', this.animalsMachosReproductivos.length);
+  console.log('📋 Detalle machos reproductivos:', this.animalsMachosReproductivos);
+  
+  // Verificar cada macho individualmente
+  this.animalsMachos.forEach(macho => {
+    const edadMeses = macho.edadMeses || 0;
+    const activo = macho.activoReproduccion !== false;
+    const edadMinima = 12;
+    const edadMaxima = 120;
+    const edadOk = edadMeses >= edadMinima && edadMeses <= edadMaxima;
+    const esReproductivo = activo && edadOk;
+    
+    console.log(`🔍 ${macho.nombre} (${macho.id}):`, {
+      edadMeses,
+      activoReproduccion: macho.activoReproduccion,
+      estadoReproductivo: macho.estadoReproductivo,
+      edadOk,
+      esReproductivo,
+      categoria: this.getCategoriaEdad(macho)
+    });
+  });
+}
+
+  // Métodos de utilidad
+  getCategoriaEdad(animal: Animal): string {
+    if (!animal.edadMeses) return 'Edad desconocida';
+    
+    const edad = animal.edadMeses;
+    const años = Math.floor(edad / 12);
+    const meses = edad % 12;
+    
+    if (animal.sexo === 'Hembra') {
+      if (edad < 15) return `📅 ${años}a ${meses}m (Muy joven)`;
+      if (edad <= 24) return `👶 ${años}a ${meses}m (Primera monta)`;
+      if (edad <= 96) return `🐄 ${años}a ${meses}m (Plena producción)`;
+      if (edad <= 144) return `👵 ${años}a ${meses}m (Adulto mayor)`;
+      return `🛑 ${años}a ${meses}m (Edad avanzada)`;
+    } else {
+      if (edad < 12) return `📅 ${años}a ${meses}m (Muy joven)`;
+      if (edad <= 24) return `👦 ${años}a ${meses}m (Macho joven)`;
+      if (edad <= 96) return `🐂 ${años}a ${meses}m (Adulto reproductivo)`;
+      if (edad <= 120) return `👴 ${años}a ${meses}m (Semental mayor)`;
+      return `🛑 ${años}a ${meses}m (Edad avanzada)`;
+    }
+  }
+
+  // Debug methods
+  async debugAnimalData() {
+    console.log('=== 🐄 DEBUG ANIMAL DATA ===');
+    console.log('Total animales:', this.animals.length);
+    console.log('Hembras reproductivas:', this.animalsHembrasReproductivas.length);
+    console.log('Machos reproductivos:', this.animalsMachosReproductivos.length);
+    
+    this.animals.forEach(animal => {
+      console.log(`${animal.sexo === 'Hembra' ? '🐄' : '🐂'} ${animal.nombre}: ${animal.edadMeses} meses - ${this.getCategoriaEdad(animal)}`);
+    });
+  }
+
+  // El resto de tus métodos existentes (sin cambios)
   private createLocalDate(year: number, month: number, day: number): Date {
     return new Date(year, month, day, 12, 0, 0, 0);
   }
 
-  // Función auxiliar para obtener la fecha en formato string local
   private getLocalDateString(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -291,7 +947,6 @@ debugModalState() {
     return `${year}-${month}-${day}`;
   }
 
-  // Función auxiliar para comparar fechas sin problemas de zona horaria
   private isSameDate(date1: Date, date2: Date): boolean {
     return (
       date1.getFullYear() === date2.getFullYear() &&
@@ -301,15 +956,12 @@ debugModalState() {
   }
 
   generateCalendar() {
-    // Crear fechas usando hora local para evitar problemas de zona horaria
     const firstDay = this.createLocalDate(this.currentYear, this.currentMonth, 1);
     const lastDay = this.createLocalDate(this.currentYear, this.currentMonth + 1, 0);
 
-    // Calcular el primer día a mostrar (puede ser del mes anterior)
     const startDate = this.createLocalDate(this.currentYear, this.currentMonth, 1);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-    // Calcular el último día a mostrar (puede ser del mes siguiente)
     const endDate = this.createLocalDate(this.currentYear, this.currentMonth + 1, 0);
     endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
 
@@ -318,15 +970,9 @@ debugModalState() {
 
     while (currentDate <= endDate) {
       const dateString = this.getLocalDateString(currentDate);
-      
-      // Buscar eventos para esta fecha
       const dayEvents = this.eventos.filter((evento) => evento.fecha === dateString);
-      
-      // Verificar si es hoy
       const today = new Date();
       const isToday = this.isSameDate(currentDate, today);
-      
-      // Verificar si es del mes actual
       const isCurrentMonth = currentDate.getMonth() === this.currentMonth;
 
       this.calendarDays.push({
@@ -338,7 +984,6 @@ debugModalState() {
         dateString: dateString,
       });
 
-      // Avanzar al siguiente día
       currentDate.setDate(currentDate.getDate() + 1);
     }
   }
@@ -375,7 +1020,6 @@ debugModalState() {
 
   selectDay(day: CalendarDay) {
     this.selectedDay = day;
-    this.showToast(`Día seleccionado: ${this.formatSelectedDay(day)}`, "primary");
   }
 
   formatSelectedDay(day: CalendarDay): string {
@@ -396,69 +1040,33 @@ debugModalState() {
     }
   }
 
-  async loadAnimals() {
-    try {
-      console.log('🔄 Cargando animales desde base de datos...');
-      
-      // Intentar inicializar la base de datos
-      const dbStatus = await this.databaseService.getDatabaseStatus();
-      
-      if (!dbStatus.isReady) {
-        console.log('📋 Base de datos no está lista, inicializando...');
-        const initialized = await this.databaseService.initializeDatabase();
-        if (!initialized) {
-          throw new Error('No se pudo inicializar la base de datos');
-        }
-      }
-      
-      // Obtener animales
-      const dbAnimals = await this.databaseService.getAllAnimals();
-      
-      if (dbAnimals && dbAnimals.length > 0) {
-        this.animals = dbAnimals;
-        console.log(`✅ ${dbAnimals.length} animales cargados desde BD`);
-      } else {
-        // Si no hay animales en BD, usar datos por defecto
-        this.animals = this.getDefaultAnimals();
-        console.log('ℹ️ Usando animales por defecto');
-      }
-      
-    } catch (error) {
-      console.error('❌ Error cargando animales:', error);
-      // Fallback a datos de ejemplo
-      this.animals = this.getDefaultAnimals();
-      await this.showToast('Error cargando animales. Usando datos de ejemplo.', 'warning');
-    }
+  updateStats() {
+    this.totalEventos = this.eventos.length;
+    this.eventosPendientes = this.eventos.filter((e) =>
+      e.estado === "Pendiente" || e.estado === "Programado").length;
+    
+    const today = this.getLocalDateString(new Date());
+    this.eventosHoy = this.eventos.filter((e) => e.fecha === today).length;
+    
+    this.animalesEnCiclo = this.animalsHembras.filter(animal => 
+      animal.ultimoParto && 
+      animal.diasPostParto && 
+      animal.diasPostParto > 0 && 
+      animal.diasPostParto < 300
+    ).length;
   }
 
-  updateStats() {
-  this.totalEventos = this.eventos.length;
-  this.eventosPendientes = this.eventos.filter((e) =>
-    e.estado === "Pendiente" || e.estado === "Programado").length;
-  
-  const today = this.getLocalDateString(new Date());
-  this.eventosHoy = this.eventos.filter((e) => e.fecha === today).length;
-  
-  // Calcular animales en ciclo reproductivo
-  this.animalesEnCiclo = this.animalsHembras.filter(animal => 
-    animal.ultimoParto && 
-    animal.diasPostParto && 
-    animal.diasPostParto > 0 && 
-    animal.diasPostParto < 300
-  ).length;
-}
-
   applyFilters() {
-  this.filteredEventos = this.eventos.filter((evento) => {
-    const matchesTipo = this.selectedTipoFilter === "Todos" || evento.tipo === this.selectedTipoFilter;
-    const matchesEstado = this.selectedEstadoFilter === "Todos" || evento.estado === this.selectedEstadoFilter;
-    const matchesAnimal = this.selectedAnimalFilter === "Todos" || evento.animalId === this.selectedAnimalFilter;
-    
-    return matchesTipo && matchesEstado && matchesAnimal;
-  });
+    this.filteredEventos = this.eventos.filter((evento) => {
+      const matchesTipo = this.selectedTipoFilter === "Todos" || evento.tipo === this.selectedTipoFilter;
+      const matchesEstado = this.selectedEstadoFilter === "Todos" || evento.estado === this.selectedEstadoFilter;
+      const matchesAnimal = this.selectedAnimalFilter === "Todos" || evento.animalId === this.selectedAnimalFilter;
+      
+      return matchesTipo && matchesEstado && matchesAnimal;
+    });
 
-  this.filteredEventos.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-}
+    this.filteredEventos.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+  }
 
   onTipoFilterChange(event: any) {
     this.selectedTipoFilter = event.detail.value;
@@ -473,286 +1081,59 @@ debugModalState() {
   setViewMode(mode: string) {
     if (mode !== this.viewMode) {
       this.viewMode = mode;
-      if (mode === "calendar") {
-        this.showToast("Vista de calendario seleccionada", "primary");
-      } else {
-        this.showToast("Vista de lista seleccionada", "primary");
-      }
     }
   }
-
-//Metodo para ver la obcion de reporte 
-async mostrarOpcionesReporte() {
-  const alert = await this.alertController.create({
-    header: 'Generar Reporte',
-    message: 'Seleccione el tipo de reporte:',
-    buttons: [
-      {
-        text: 'Semana Actual (PDF)',
-        handler: () => this.generarReporteSemanal('actual', 'pdf')
-      },
-      {
-        text: 'Semana Actual (Excel)',
-        handler: () => this.generarReporteSemanal('actual', 'excel')
-      },
-      {
-        text: 'Semana Pasada (PDF)',
-        handler: () => this.generarReporteSemanal('pasada', 'pdf')
-      },
-      {
-        text: 'Semana Pasada (Excel)',
-        handler: () => this.generarReporteSemanal('pasada', 'excel')
-      },
-      {
-        text: 'Cancelar',
-        role: 'cancel'
-      }
-    ]
-  });
-
-  await alert.present();
-}
-
-async generarReporteSemanal(tipo: string, formato: string) {
-  let rango: any;
-  
-  if (tipo === 'actual') {
-    rango = this.reportService.getSemanaActual();
-  } else {
-    rango = this.reportService.getSemanaPasada();
-  }
-
-  const loading = await this.showLoading('Generando reporte...');
-  
-  try {
-    const reporte = await this.reportService.generarReporteSemanal(
-      rango.inicio, 
-      rango.fin
-    );
-
-    if (formato === 'pdf') {
-      await this.reportService.generarPDF(reporte);
-    } else {
-      await this.reportService.generarExcel(reporte);
-    }
-
-    await loading.dismiss();
-    await this.showToast('Reporte generado exitosamente', 'success');
-    
-  } catch (error) {
-    await loading.dismiss();
-    console.error('Error generando reporte:', error);
-    await this.showToast('Error al generar el reporte', 'danger');
-  }
-}
-
-private async showLoading(message: string): Promise<HTMLIonLoadingElement> {
-  const loading = await this.loadingController.create({ 
-    message,
-    duration: 30000, // 30 segundos máximo
-    spinner: 'crescent'
-  });
-  await loading.present();
-  return loading;
-}
-
-  
 
   async openAddModal() {
     this.isEditMode = false;
     this.currentEvento = this.getEmptyEvento();
     this.isModalOpen = true;
-    await this.showToast("Formulario de registro abierto", "primary");
   }
 
   async openEditModal(evento: Evento) {
     this.isEditMode = true;
     this.currentEvento = { ...evento };
     this.isModalOpen = true;
-    await this.showToast(`Editando evento: ${evento.tipo} - ${evento.animalNombre}`, "primary");
   }
 
-async closeModal() {
-  console.log('Cerrando modal...');
-  this.isModalOpen = false;
-  
-  // Resetear el evento actual después de cerrar el modal
-  setTimeout(() => {
-    this.currentEvento = this.getEmptyEvento();
-    this.isEditMode = false;
-  }, 100);
-  
-  if (this.isEditMode) {
-    await this.showToast("Edición cancelada", "warning");
-  } else {
-    await this.showToast("Registro cancelado", "warning");
-  }
-}
-
-async saveEvento() {
-  if (!this.validateEvento()) {
-    await this.showToast("Por favor complete todos los campos requeridos", "warning");
-    return;
+  async closeModal() {
+    this.isModalOpen = false;
+    setTimeout(() => {
+      this.currentEvento = this.getEmptyEvento();
+      this.isEditMode = false;
+    }, 100);
   }
 
-  const animal = this.animals.find((a) => a.id === this.currentEvento.animalId);
-  if (animal) {
-    this.currentEvento.animalNombre = animal.nombre;
-  }
-
-  if (this.isEditMode) {
-    const index = this.eventos.findIndex((e) => e.id === this.currentEvento.id);
-    if (index !== -1) {
-      this.eventos[index] = { ...this.currentEvento };
-      await this.showToast("Evento actualizado correctamente", "success");
+  async saveEvento() {
+    if (!this.validateEvento()) {
+      await this.showToast("Por favor complete todos los campos requeridos", "warning");
+      return;
     }
-  } else {
-    this.currentEvento.id = Date.now().toString();
-    this.currentEvento.fechaCreacion = this.getLocalDateString(new Date());
-    this.eventos.push({ ...this.currentEvento });
-    await this.showToast("Evento registrado correctamente", "success");
-  }
 
-  // GUARDAR SOLO EN BD
-  await this.saveEventsToDatabase();
-  
-  this.updateStats();
-  this.applyFilters();
-  this.generateCalendar();
-  this.closeModal();
-}
-
-// En tab3.page.ts
-async forceReloadEvents() {
-  console.log('🔄 Forzando recarga de eventos...');
-  this.updateStats();
-  this.applyFilters();
-  this.generateCalendar();
-}
-
-// Llama a este método cuando navegues a Tab3
-ionViewDidEnter() {
-  console.log('📋 Tab3 became visible - refreshing events');
-  this.forceReloadEvents();
-}
-
-  async confirmDelete(evento: Evento) {
-    const alert = await this.alertController.create({
-      header: "Confirmar Eliminación",
-      message: `¿Estás seguro de que deseas eliminar el evento de <strong>${evento.tipo}</strong> para <strong>${evento.animalNombre}</strong>?<br><br>Esta acción no se puede deshacer.`,
-      cssClass: "custom-alert",
-      buttons: [
-        {
-          text: "Cancelar",
-          role: "cancel",
-          cssClass: "alert-button-cancel",
-          handler: () => {
-            console.log("Eliminación cancelada");
-          },
-        },
-        {
-          text: "Aceptar",
-          cssClass: "alert-button-confirm",
-          handler: () => {
-            this.deleteEvento(evento);
-          }
-        },
-      ],
-    });
-
-    await alert.present();
-  }
-
- async deleteEvento(evento: Evento) {
-  const index = this.eventos.findIndex((e) => e.id === evento.id);
-  if (index !== -1) {
-    this.eventos.splice(index, 1);
-    
-    // Eliminar de la BD
-    try {
-      await this.databaseService.deleteEvento(evento.id);
-      console.log('✅ Evento eliminado de la BD');
-    } catch (error) {
-      console.error('❌ Error eliminando evento de BD:', error);
+    const animal = this.animals.find((a) => a.id === this.currentEvento.animalId);
+    if (animal) {
+      this.currentEvento.animalNombre = animal.nombre;
     }
-    
-    // Actualizar en BD
-    await this.saveEventsToDatabase();
-    
-    this.updateStats();
-    this.applyFilters();
-    this.generateCalendar();
-    await this.showToast("Evento eliminado correctamente", "success");
-  }
-}
-// Nuevo método para sincronizar con la base de datos
-private async syncEventsToDatabase() {
-  try {
-    console.log('🔄 Sincronizando eventos con base de datos...');
-    
-    const dbReady = await this.databaseService.initializeDatabase();
-    if (!dbReady) {
-      throw new Error('Base de datos no disponible para sincronización');
-    }
-    
-    // Obtener eventos actuales de la BD para comparar
-    const eventosBD = await this.databaseService.getAllEventos();
-    
-    for (const evento of this.eventos) {
-      try {
-        const eventoExistente = eventosBD.find(e => e.id === evento.id);
-        
-        if (eventoExistente) {
-          // Actualizar solo si hay cambios
-          if (this.hasEventChanged(evento, eventoExistente)) {
-            await this.databaseService.updateEvento(evento);
-            console.log('📝 Evento actualizado en BD:', evento.id);
-          }
-        } else {
-          // Insertar nuevo evento
-          await this.databaseService.insertEvento(evento);
-          console.log('📝 Nuevo evento insertado en BD:', evento.id);
-        }
-      } catch (error) {
-        console.error(`❌ Error sincronizando evento ${evento.id}:`, error);
+
+    if (this.isEditMode) {
+      const index = this.eventos.findIndex((e) => e.id === this.currentEvento.id);
+      if (index !== -1) {
+        this.eventos[index] = { ...this.currentEvento };
+        await this.showToast("Evento actualizado correctamente", "success");
       }
+    } else {
+      this.currentEvento.id = Date.now().toString();
+      this.currentEvento.fechaCreacion = this.getLocalDateString(new Date());
+      this.eventos.push({ ...this.currentEvento });
+      await this.showToast("Evento registrado correctamente", "success");
     }
-    
-    console.log('✅ Sincronización completada');
-  } catch (error) {
-    console.error('❌ Error en sincronización:', error);
-    throw error;
-  }
-}
 
-// Método auxiliar para detectar cambios
-private hasEventChanged(evento1: any, evento2: any): boolean {
-  return (
-    evento1.fecha !== evento2.fecha ||
-    evento1.animalId !== evento2.animalId ||
-    evento1.tipo !== evento2.tipo ||
-    evento1.estado !== evento2.estado ||
-    evento1.notas !== evento2.notas ||
-    evento1.recordatorio !== evento2.recordatorio
-  );
-}
-
-
-
- async markAsCompleted(evento: Evento) {
-  const index = this.eventos.findIndex((e) => e.id === evento.id);
-  if (index !== -1) {
-    this.eventos[index].estado = "Realizado";
-    
-    // Actualizar en BD
     await this.saveEventsToDatabase();
-    
     this.updateStats();
     this.applyFilters();
     this.generateCalendar();
-    await this.showToast(`${evento.tipo} marcado como realizado`, "success");
+    this.closeModal();
   }
-}
 
   validateEvento(): boolean {
     return !!(
@@ -778,46 +1159,36 @@ private hasEventChanged(evento1: any, evento2: any): boolean {
   }
 
   getEventColor(tipo: string): string {
-  switch (tipo) {
-    case "Celo": return "#eb445a";
-    case "Vacunación": return "#3880ff";
-    case "Inseminación": return "#2dd36f";
-    case "Parto": return "#ffc409";
-    case "Secado": return "#ff6b35";
-    case "Reto": return "#9c27b0";
-    case "Test Preñez": return "#00bcd4";
-    case "Revisión": return "#ff9800";
-    default: return "#92949c";
+    switch (tipo) {
+      case "Celo": return "#eb445a";
+      case "Vacunación": return "#3880ff";
+      case "Inseminación": return "#2dd36f";
+      case "Parto": return "#ffc409";
+      case "Secado": return "#ff6b35";
+      case "Reto": return "#9c27b0";
+      case "Test Preñez": return "#00bcd4";
+      case "Revisión": return "#ff9800";
+      default: return "#92949c";
+    }
   }
-}
 
   getEventIcon(tipo: string): string {
     switch (tipo) {
-      case "Celo":
-        return "heart-outline";
-      case "Vacunación":
-        return "medical-outline";
-      case "Inseminación":
-        return "flower-outline";
-      case "Parto":
-        return "person-outline";
-      default:
-        return "time-outline";
+      case "Celo": return "heart-outline";
+      case "Vacunación": return "medical-outline";
+      case "Inseminación": return "flower-outline";
+      case "Parto": return "person-outline";
+      default: return "time-outline";
     }
   }
 
   getStatusColor(estado: string): string {
     switch (estado) {
-      case "Realizado":
-        return "success";
-      case "Programado":
-        return "primary";
-      case "Pendiente":
-        return "warning";
-      case "Alerta":
-        return "danger";
-      default:
-        return "medium";
+      case "Realizado": return "success";
+      case "Programado": return "primary";
+      case "Pendiente": return "warning";
+      case "Alerta": return "danger";
+      default: return "medium";
     }
   }
 
@@ -846,207 +1217,20 @@ private hasEventChanged(evento1: any, evento2: any): boolean {
     return eventDate < today && evento.estado !== "Realizado";
   }
 
-//método cargarEventoParaGestionar para mejor búsqueda:
-private cargarEventoParaGestionar() {
-  const eventoGuardado = localStorage.getItem('eventoParaGestionar');
-  if (eventoGuardado) {
-    try {
-      const evento = JSON.parse(eventoGuardado);
-      console.log('Evento recibido desde Tab1:', evento);
-      
-      // Esperar a que la UI esté completamente renderizada
-      setTimeout(() => {
-        // Primero cerrar cualquier modal abierto
-        this.isModalOpen = false;
-        
-        // Esperar un poco más antes de abrir el nuevo modal
-        setTimeout(() => {
-          let eventoExistente = this.eventos.find(e => e.id === evento.id);
-          
-          if (!eventoExistente) {
-            eventoExistente = this.eventos.find(e => 
-              e.fecha === evento.fecha && 
-              e.animalId === evento.animalId && 
-              e.tipo === evento.tipo
-            );
-          }
-          
-          if (eventoExistente) {
-            this.openEditModal(eventoExistente);
-          } else {
-            this.isEditMode = false;
-            this.currentEvento = this.getEmptyEvento();
-            this.currentEvento.fecha = evento.fecha;
-            this.currentEvento.animalId = evento.animalId;
-            this.currentEvento.animalNombre = evento.animalNombre;
-            this.currentEvento.tipo = evento.tipo;
-            this.currentEvento.estado = evento.estado;
-            this.currentEvento.notas = evento.notas || '';
-            this.isModalOpen = true;
-          }
-          
-          localStorage.removeItem('eventoParaGestionar');
-        }, 300);
-      }, 800); // Tiempo suficiente para que Tab3 se cargue completamente
-      
-    } catch (error) {
-      console.error('Error al parsear evento desde Tab1:', error);
-      localStorage.removeItem('eventoParaGestionar');
-    }
+  // Métodos para protocolos (agregar estos también)
+  private async generarEventosProtocoloParto(animal: Animal, fechaParto: string) {
+    // Implementación del protocolo de parto
+    console.log('📋 Generando protocolo de parto para:', animal.nombre);
   }
-}
 
-// En tab3.page.ts
-async debugEventos() {
-  console.log('🐛 DEBUG: Estado actual de eventos');
-  console.log('Total eventos en array:', this.eventos.length);
-  console.log('Eventos:', this.eventos);
-  
-  // Verificar duplicados por ID
-  const ids = this.eventos.map(e => e.id);
-  const uniqueIds = [...new Set(ids)];
-  console.log('IDs únicos:', uniqueIds.length);
-  console.log('IDs duplicados:', ids.length !== uniqueIds.length);
-  
-  if (ids.length !== uniqueIds.length) {
-    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
-    console.log('IDs duplicados encontrados:', duplicates);
+  private async generarEventosPostReproduccion(animal: Animal, fechaReproduccion: string) {
+    // Implementación del protocolo post-reproducción
+    console.log('📋 Generando protocolo post-reproducción para:', animal.nombre);
   }
-}
 
-// Llama a este método después de cargar eventos
-private async loadEventsFromDatabase() {
-  try {
-    // ... código existente ...
-    this.eventos = await this.databaseService.getAllEventos();
-    await this.debugEventos(); // ← Añade esto temporalmente
-  } catch (error) {
-    // ... manejo de error
-  }
-}
-
-// Reemplaza el método loadEventsFromDatabase
-private async saveEventsToDatabase() {
-  try {
-    console.log('💾 Guardando eventos en base de datos...');
-    
-    const dbReady = await this.databaseService.initializeDatabase();
-    if (!dbReady) {
-      throw new Error('Base de datos no disponible');
-    }
-    
-    // Sincronizar cada evento con la BD
-    for (const evento of this.eventos) {
-      const eventoExistente = await this.databaseService.getEventoById(evento.id);
-      
-      if (eventoExistente) {
-        await this.databaseService.updateEvento(evento);
-      } else {
-        await this.databaseService.insertEvento(evento);
-      }
-    }
-    
-    console.log('✅ Eventos guardados en BD');
-    
-    // NOTA: Ya NO usamos localStorage para eventos
-    // localStorage.removeItem('eventosTab3'); // Limpiar por si acaso
-    
-    // Notificar a otras pestañas
-    this.dataShareService.notifyDataUpdate();
-    
-  } catch (error) {
-    console.error('❌ Error guardando eventos en BD:', error);
-    throw error;
-  }
-}
-// En tab3.page.ts
-private async migrateEventsToDatabase(): Promise<void> {
-  try {
-    const eventosStorage = localStorage.getItem('eventosTab3');
-    if (eventosStorage) {
-      const eventos = JSON.parse(eventosStorage);
-      console.log(`🚚 Migrando ${eventos.length} eventos a la base de datos...`);
-      
-      const dbReady = await this.databaseService.initializeDatabase();
-      if (!dbReady) {
-        console.log('❌ BD no disponible para migración');
-        return;
-      }
-      
-      let migratedCount = 0;
-      let skippedCount = 0;
-      
-      for (const evento of eventos) {
-        try {
-          // Verificar si ya existe en BD por múltiples criterios
-          const eventoExistente = await this.databaseService.getEventoById(evento.id);
-          
-          // Si no existe por ID, verificar por contenido
-          if (!eventoExistente) {
-            // Buscar por fecha, animal y tipo para evitar duplicados
-            const eventosSimilares = await this.databaseService.getAllEventos();
-            const existeSimilar = eventosSimilares.some(e => 
-              e.fecha === evento.fecha && 
-              e.animalId === evento.animalId && 
-              e.tipo === evento.tipo
-            );
-            
-            if (!existeSimilar) {
-              await this.databaseService.insertEvento(evento);
-              migratedCount++;
-            } else {
-              skippedCount++;
-              console.log('⏭️ Evento similar ya existe, omitiendo:', evento);
-            }
-          } else {
-            skippedCount++;
-            console.log('⏭️ Evento ya existe en BD, omitiendo:', evento.id);
-          }
-        } catch (error) {
-          console.error(`❌ Error migrando evento ${evento.id}:`, error);
-        }
-      }
-      
-      console.log(`✅ ${migratedCount} eventos migrados, ${skippedCount} omitidos`);
-      
-      // Una vez migrados, limpiar localStorage para evitar duplicados futuros
-      if (migratedCount > 0) {
-        localStorage.removeItem('eventosTab3');
-        console.log('🧹 localStorage limpiado después de migración');
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error en migración de eventos:', error);
-  }
-}
-
-
-  async logout() {
-    const alert = await this.alertController.create({
-      header: "Cerrar Sesión",
-      message: "¿Estás seguro de que deseas cerrar sesión?<br><br>Se perderán los datos no guardados.",
-      cssClass: "custom-alert",
-      buttons: [
-        {
-          text: "Cancelar",
-          role: "cancel",
-          cssClass: "alert-button-cancel",
-          handler: () => {
-            console.log("Logout cancelado");
-          },
-        },
-        {
-          text: "Aceptar",
-          cssClass: "alert-button-confirm",
-          handler: () => {
-            this.authService.logout();
-            this.router.navigate(['/login'], { replaceUrl: true });
-          },
-        },
-      ]
-    });
-
-    await alert.present();
+  private crearEventoProtocolo(animal: Animal, diasPostParto: number, tipo: Evento['tipo'], notas: string, estado: Evento['estado'] = "Programado") {
+    // Implementación para crear eventos de protocolo
+    console.log('📝 Creando evento de protocolo:', tipo, 'para', animal.nombre);
   }
 
   private async showToast(message: string, color: string) {
@@ -1056,272 +1240,8 @@ private async migrateEventsToDatabase(): Promise<void> {
       color,
       position: "top",
     });
-
     await toast.present();
   }
-
-//Metodo post Parto 
-// Método para registrar un parto y generar automáticamente el ciclo completo
-async registrarParto(animal: Animal, fechaParto: string, observaciones?: string) {
-  // 1. Registrar el evento de parto
-  const eventoParto: Evento = {
-    id: `parto-${Date.now()}`,
-    fecha: fechaParto,
-    animalId: animal.id,
-    animalNombre: animal.nombre,
-    tipo: "Parto",
-    estado: "Realizado",
-    notas: observaciones || 'Parto registrado',
-    fechaCreacion: this.getLocalDateString(new Date()),
-    protocoloParto: true,
-    diasPostParto: 0
-  };
-
-  this.eventos.push(eventoParto);
-
-  // 2. Actualizar información del animal
-  animal.ultimoParto = fechaParto;
-  animal.diasPostParto = 0;
-  animal.estadoReproductivo = "Limpia";
-
-  // 3. Generar eventos automáticos del protocolo
-  await this.generarEventosProtocoloParto(animal, fechaParto);
-
-  await this.saveEventsToDatabase();
-  this.updateStats();
-  this.applyFilters();
-  this.generateCalendar();
-}
-
-// Generar todos los eventos del protocolo de parto
-private async generarEventosProtocoloParto(animal: Animal, fechaParto: string) {
-  const fechaBase = new Date(fechaParto + 'T12:00:00');
-  
-  // Día 7 - Revisión post-parto
-  this.crearEventoProtocolo(animal, 7, "Revisión", "Revisión post-parto - Evaluar condición uterina");
-
-  // Día 26 - Primer celo (Amarillo)
-  this.crearEventoProtocolo(animal, 26, "Celo", "Primer celo post-parto - Indicador amarillo", "Pendiente");
-
-  // Día 52 - Segundo celo (Verde)
-  this.crearEventoProtocolo(animal, 52, "Celo", "Segundo celo post-parto - Indicador verde", "Programado");
-
-  // Día 85 - Diagnóstico de vacía
-  this.crearEventoProtocolo(animal, 85, "Revisión", "Diagnóstico de vacía - Evaluar condición reproductiva", "Programado");
-}
-
-// Crear evento individual del protocolo
-private crearEventoProtocolo(animal: Animal, diasPostParto: number, tipo: Evento['tipo'], notas: string, estado: Evento['estado'] = "Programado") {
-  const fechaBase = new Date(animal.ultimoParto + 'T12:00:00');
-  const fechaEvento = new Date(fechaBase);
-  fechaEvento.setDate(fechaBase.getDate() + diasPostParto);
-
-  const evento: Evento = {
-    id: `${tipo.toLowerCase()}-${animal.id}-${diasPostParto}-${Date.now()}`,
-    fecha: this.getLocalDateString(fechaEvento),
-    animalId: animal.id,
-    animalNombre: animal.nombre,
-    tipo: tipo,
-    estado: estado,
-    notas: notas,
-    fechaCreacion: this.getLocalDateString(new Date()),
-    protocoloParto: true,
-    diasPostParto: diasPostParto
-  };
-
-  this.eventos.push(evento);
-}
-
-// Método para registrar monta natural o inseminación
-async registrarReproduccion(animal: Animal, tipo: "Monta natural" | "Inseminación", fecha: string, semental?: string) {
-  const evento: Evento = {
-    id: `repro-${tipo.toLowerCase()}-${Date.now()}`,
-    fecha: fecha,
-    animalId: animal.id,
-    animalNombre: animal.nombre,
-    tipo: tipo === "Monta natural" ? "Celo" : "Inseminación",
-    estado: "Realizado",
-    notas: `${tipo} ${semental ? 'con ' + semental : ''}`,
-    fechaCreacion: this.getLocalDateString(new Date()),
-    protocoloParto: true
-  };
-
-  this.eventos.push(evento);
-
-  // Actualizar animal
-  if (tipo === "Monta natural") {
-    animal.ultimaMonta = fecha;
-  } else {
-    animal.ultimaInseminacion = fecha;
-  }
-
-  // Generar próximos eventos reproductivos
-  await this.generarEventosPostReproduccion(animal, fecha);
-
-  await this.saveEventsToDatabase();
-  this.updateStats();
-  this.applyFilters();
-  this.generateCalendar();
-}
-
-//Mtodo para el parto 
-// Métodos para abrir/cerrar modales
-openPartoModal() {
-  this.partoData = {
-    animalId: '',
-    fecha: this.getLocalDateString(new Date()),
-    raza: 'Angus',
-    observaciones: ''
-  };
-  this.isPartoModalOpen = true;
-}
-
-closePartoModal() {
-  this.isPartoModalOpen = false;
-}
-
-openReproduccionModal() {
-  this.reproduccionData = {
-    tipo: 'Monta natural',
-    animalId: '',
-    fecha: this.getLocalDateString(new Date()),
-    semental: '',
-    observaciones: ''
-  };
-  this.isReproduccionModalOpen = true;
-}
-
-closeReproduccionModal() {
-  this.isReproduccionModalOpen = false;
-}
-
-openEstadoModal() {
-  // Implementar lógica para cambiar estado reproductivo
-  this.showToast('Función de cambio de estado en desarrollo', 'warning');
-}
-
-// Filtro por animal
-onAnimalFilterChange(event: any) {
-  this.selectedAnimalFilter = event.detail.value;
-  this.applyFilters();
-}
-
-// Método para confirmar parto
-async confirmarParto() {
-  if (!this.partoData.animalId || !this.partoData.fecha) {
-    await this.showToast('Por favor complete todos los campos requeridos', 'warning');
-    return;
-  }
-
-  const animal = this.animals.find(a => a.id === this.partoData.animalId);
-  if (!animal) {
-    await this.showToast('Animal no encontrado', 'danger');
-    return;
-  }
-
-  await this.registrarParto(animal, this.partoData.fecha, this.partoData.observaciones);
-  this.isPartoModalOpen = false;
-}
-
-// Método para confirmar reproducción
-async confirmarReproduccion() {
-  if (!this.reproduccionData.animalId || !this.reproduccionData.fecha) {
-    await this.showToast('Por favor complete todos los campos requeridos', 'warning');
-    return;
-  }
-
-  const animal = this.animals.find(a => a.id === this.reproduccionData.animalId);
-  if (!animal) {
-    await this.showToast('Animal no encontrado', 'danger');
-    return;
-  }
-
-  await this.registrarReproduccion(
-    animal, 
-    this.reproduccionData.tipo as "Monta natural" | "Inseminación", 
-    this.reproduccionData.fecha, 
-    this.reproduccionData.semental
-  );
-  this.isReproduccionModalOpen = false;
-}
-
-//----------------------------------------Privates----------------------------------------------------------------------------//
-
-// Generar eventos después de la reproducción
-private async generarEventosPostReproduccion(animal: Animal, fechaReproduccion: string) {
-  const fechaBase = new Date(fechaReproduccion + 'T12:00:00');
-  
-  // Próximo celo a los 21 días
-  this.crearEventoProtocolo(animal, 21, "Celo", "Próximo celo estimado", "Programado");
-
-  // Test de preñez 1 a los 35 días
-  this.crearEventoProtocolo(animal, 35, "Test Preñez", "Primer diagnóstico de gestación", "Programado");
-
-  // Test de preñez 2 a los 90 días
-  this.crearEventoProtocolo(animal, 90, "Test Preñez", "Segundo diagnóstico de gestación", "Programado");
-
-  // Test de preñez 3 a los 180 días
-  this.crearEventoProtocolo(animal, 180, "Test Preñez", "Tercer diagnóstico de gestación", "Programado");
-
-  // Secado a los 220 días
-  this.crearEventoProtocolo(animal, 220, "Secado", "Inicio de período de secado", "Programado");
-
-  // Reto a los 259 días
-  this.crearEventoProtocolo(animal, 259, "Reto", "Preparación para parto", "Programado");
-
-  // Parto estimado (depende de la raza)
-  const diasGestacion = this.obtenerDiasGestacion(animal.raza);
-  this.crearEventoProtocolo(animal, diasGestacion, "Parto", "Parto estimado", "Programado");
-}
-
-// Obtener días de gestación según raza
-private obtenerDiasGestacion(raza?: string): number {
-  const razas = {
-    'Angus': 278,
-    'Holstein': 279,
-    'Jersey': 279,
-    'Hereford': 285,
-    'Charoláis': 286,
-    'Simental': 289
-  };
-  
-  return razas[raza as keyof typeof razas] || 280; // Default 280 días
-}
-
-// Método para actualizar estado reproductivo del animal
-actualizarEstadoReproductivo(animal: Animal, nuevoEstado: Animal['estadoReproductivo'], observaciones?: string) {
-  animal.estadoReproductivo = nuevoEstado;
-  
-  // Registrar evento de cambio de estado
-  const evento: Evento = {
-    id: `estado-${Date.now()}`,
-    fecha: this.getLocalDateString(new Date()),
-    animalId: animal.id,
-    animalNombre: animal.nombre,
-    tipo: "Revisión",
-    estado: "Realizado",
-    notas: `Cambio de estado: ${nuevoEstado}. ${observaciones || ''}`,
-    fechaCreacion: this.getLocalDateString(new Date())
-  };
-
-  this.eventos.push(evento);
-}
-
-// Método para actualizar días post-parto automáticamente
-actualizarDiasPostParto() {
-  const hoy = new Date();
-  this.animals.forEach(animal => {
-    if (animal.ultimoParto) {
-      const ultimoPartoDate = new Date(animal.ultimoParto + 'T12:00:00');
-      const diffTime = hoy.getTime() - ultimoPartoDate.getTime();
-      animal.diasPostParto = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    }
-  });
-
-  
-  
-}
-
 }
 
 export default Tab3Page;

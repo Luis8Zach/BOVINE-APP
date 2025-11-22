@@ -1,17 +1,17 @@
 <ion-header [translucent]="true">
-  <ion-toolbar color="success">
+  <ion-toolbar style="--background: #A4C49A; ">
     <ion-title>
       <div class="header-content">
         <div class="header-left">
           <ion-icon name="calendar-outline"></ion-icon>
-          <strong>AGRODATA</strong>
+          <strong>BOVINET</strong>
         </div>
         <div class="header-right">
           <span>RANCHO LA VAQUITA FELIZ</span>
           <span class="event-count">{{ totalEventos }} EVENTOS</span>
           <ion-button fill="clear" (click)="mostrarOpcionesReporte()" class="report-btn">
-            <ion-icon name="document-text-outline"></ion-icon>
-            Reportes
+          <ion-icon src="assets/icon/pdf-icon.svg"></ion-icon>
+           Reportes
           </ion-button>
           <ion-icon name="log-out-outline" (click)="logout()" class="logout-btn"></ion-icon>
         </div>
@@ -28,7 +28,6 @@
     <div class="calendar-header">
       <h2 class="calendar-title">Calendario de Control</h2>
       <ion-button 
-        color="success" 
         class="register-event-btn"
         (click)="openAddModal()"
         style="--color: #000000 !important; color: #000000 !important;">
@@ -114,7 +113,7 @@
         <div class="segment-option" 
              [class.active]="viewMode === 'calendar'" 
              (click)="setViewMode('calendar')">
-          <ion-icon name="grid-outline"></ion-icon>
+          <ion-icon name="calendar-outline"></ion-icon>
           <span>Calendario</span>
         </div>
         <div class="segment-indicator" [class.calendar-active]="viewMode === 'calendar'"></div>
@@ -557,12 +556,17 @@
                 <ion-item>
                   <ion-label position="stacked">Raza</ion-label>
                   <ion-select [(ngModel)]="partoData.raza" interface="alert">
-                    <ion-select-option value="Angus">Angus</ion-select-option>
-                    <ion-select-option value="Holstein">Holstein</ion-select-option>
-                    <ion-select-option value="Jersey">Jersey</ion-select-option>
-                    <ion-select-option value="Hereford">Hereford</ion-select-option>
-                    <ion-select-option value="Charoláis">Charoláis</ion-select-option>
-                    <ion-select-option value="Simental">Simental</ion-select-option>
+                    <ion-select-option value="Angus">Angus 🐂 (283 días) - Calidad de carne</ion-select-option>
+                    <ion-select-option value="Holstein">Holstein 🐄 (279 días) - Producción lechera</ion-select-option>
+                    <ion-select-option value="Jersey">Jersey 🐄 (279 días) - Leche con alta grasa</ion-select-option>
+                    <ion-select-option value="Hereford">Hereford 🐂 (285 días) - Raza rústica</ion-select-option>
+                    <ion-select-option value="Charoláis">Charoláis 🐂 (286 días) - Crecimiento rápido</ion-select-option>
+                    <ion-select-option value="Simental">Simental 🐄 (289 días) - Doble propósito</ion-select-option>
+                    <!-- NUEVAS RAZAS PENDIENTES -->
+                    <ion-select-option value="Brahman">Brahman 🐂 (282 días) - Resistente al calor</ion-select-option>
+                    <ion-select-option value="Suizo">Suizo 🐂 (290 días) - Alta producción lechera</ion-select-option>
+                    <ion-select-option value="Indubrasil">Indubrasil 🐄 (280 días) - Zebuina resistente</ion-select-option>
+                    <ion-select-option value="Guzerat">Guzerat 🐂 (291 días) - Longevo y fuerte</ion-select-option>
                   </ion-select>
                 </ion-item>
               </ion-col>
@@ -724,4 +728,78 @@
       </ion-content>
     </ng-template>
   </ion-modal>
+
+  <ion-modal [isOpen]="isEstadoModalOpen" (didDismiss)="closeEstadoModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="warning">
+        <ion-title>Cambiar Estado Reproductivo</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeEstadoModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="form-container">
+        <ion-grid>
+          <ion-row>
+            <ion-col size="12">
+              <ion-item>
+                <ion-label position="stacked">Animal *</ion-label>
+                <ion-select [(ngModel)]="estadoModalData.animalId" interface="alert">
+                  <ion-select-option *ngFor="let animal of animalsHembras" [value]="animal.id">
+                    {{ animal.nombre }} ({{ animal.id }}) - {{ animal.estadoReproductivo || 'Sin estado' }}
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+          <ion-row>
+            <ion-col size="12">
+              <ion-item>
+                <ion-label position="stacked">Nuevo Estado *</ion-label>
+                <ion-select [(ngModel)]="estadoModalData.nuevoEstado" interface="alert">
+                  <ion-select-option value="Limpia">Limpia</ion-select-option>
+                  <ion-select-option value="Sucia">Sucia</ion-select-option>
+                  <ion-select-option value="A calor">A calor</ion-select-option>
+                  <ion-select-option value="Vacia">Vacia</ion-select-option>
+                  <ion-select-option value="Preñada">Preñada</ion-select-option>
+                  <ion-select-option value="Seca">Seca</ion-select-option>
+                  <ion-select-option value="Reto">Reto</ion-select-option>
+                </ion-select>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+          <ion-row *ngIf="estadoModalData.nuevoEstado === 'Sucia'">
+            <ion-col size="12">
+              <ion-item>
+                <ion-label position="stacked">Tratamiento *</ion-label>
+                <ion-textarea
+                  [(ngModel)]="estadoModalData.tratamiento"
+                  placeholder="Especificar tratamiento..."
+                  rows="2">
+                </ion-textarea>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+        <div class="modal-buttons">
+          <ion-button expand="block" color="medium" (click)="closeEstadoModal()">
+            Cancelar
+          </ion-button>
+          <ion-button 
+            expand="block" 
+            color="warning" 
+            (click)="confirmarCambioEstado()"
+            [disabled]="!estadoModalData.animalId || !estadoModalData.nuevoEstado">
+            Cambiar Estado
+          </ion-button>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
 </ion-content>

@@ -122,7 +122,7 @@ export class Tab1Page implements OnInit, OnDestroy {
       this.totalHembras = animals.filter(a => a.sexo === 'Hembra').length;
       this.totalMachos = animals.filter(a => a.sexo === 'Macho').length;
       this.reproductores = animals.filter(a => 
-        a.sexo === 'Macho' || (a.sexo === 'Hembra' && this.calculateAge(a.fechaNacimiento) >= 2)
+        a.sexo === 'Macho' || a.sexo === 'Hembra' && a.fechaNacimiento && this.calculateAge(a.fechaNacimiento) >= 2
       ).length;
 
       // 5. Procesar próximos eventos (de ambas fuentes)

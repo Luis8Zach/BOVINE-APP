@@ -1,5 +1,12 @@
+$primary-green: #377d6c;
+$secondary-green: #1e9c4f;
+$light-green: #A4C49A;
+$dark-text: #2c3e50;
+$medium-text: #6c757d;
+$light-bg: #f8f9fa;
+
 .dashboard-content {
-  --background: linear-gradient(135deg, #377d6c 0%, #1e9c4f 100%);
+  --background: linear-gradient(135deg, $primary-green 0%, $secondary-green 100%);
   padding: 10px;
 }
 
@@ -111,7 +118,7 @@
           line-height: 1;
 
           &.total {
-            color: #2c3e50;
+            color: $dark-text;
           }
 
           &.hembras {
@@ -123,13 +130,13 @@
           }
 
           &.reproductores {
-            color: #377d6c;
+            color: $primary-green;
           }
         }
 
         .stat-label {
           font-size: 0.9rem;
-          color: #7f8c8d;
+          color: $medium-text;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -139,117 +146,325 @@
   }
 }
 
-// Sección de eventos
 .events-section {
   .events-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f1c40f;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, $primary-green 0%, $secondary-green 100%);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(55, 125, 108, 0.2);
 
-    .events-icon {
-      font-size: 1.5rem;
-      color: #f39c12;
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .events-icon {
+        font-size: 1.8rem;
+        color: white;
+      }
+
+      .events-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: white;
+        margin: 0;
+      }
     }
 
-    .events-title {
-      font-size: 1.3rem;
+    .events-count {
+      font-size: 1rem;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: white;
+      color: $primary-green;
       font-weight: 700;
-      color: #2c3e50;
-      margin: 0;
     }
   }
 
-  .events-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
 
-    .event-item {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 20px;
-      background: #f8f9fa;
+    .event-card {
       border-radius: 15px;
-      border-left: 4px solid #f39c12;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
       transition: all 0.3s ease;
-      cursor: pointer;
+      margin: 0;
 
       &:hover {
-        background: #e9ecef;
-        transform: translateX(5px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
       }
 
-      .event-indicator {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
+      .event-card-header {
+        padding: 20px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        color: white;
-        flex-shrink: 0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        gap: 12px;
+        position: relative;
+        overflow: hidden;
 
-        ion-icon {
-          font-size: 1.4rem;
-        }
-      }
-
-      .event-content {
-        flex: 1;
-
-        .event-main {
-          .event-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #2c3e50;
-            margin: 0 0 5px 0;
-            line-height: 1.3;
-          }
-
-          .event-description {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin: 0;
-            line-height: 1.4;
-          }
-        }
-      }
-
-      .event-date-status {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 8px;
-        flex-shrink: 0;
-
-        .event-date {
-          font-size: 0.9rem;
-          font-weight: 700;
-          color: #2c3e50;
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 100px;
+          height: 100px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 50%;
+          transform: translate(30%, -30%);
         }
 
-        .event-status {
-          font-size: 0.7rem;
-          padding: 4px 8px;
+        .event-icon-wrapper {
+          width: 48px;
+          height: 48px;
+          background: rgba(255, 255, 255, 0.25);
           border-radius: 12px;
-          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(10px);
+          z-index: 1;
+
+          .event-type-icon {
+            font-size: 1.5rem;
+            color: white;
+          }
+        }
+
+        .event-type-label {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: white;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.5px;
+          z-index: 1;
         }
       }
+
+      .event-card-content {
+        padding: 20px;
+
+        .event-animal-info {
+          margin-bottom: 12px;
+
+          .event-animal-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: $dark-text;
+            margin: 0 0 4px 0;
+          }
+
+          .event-animal-id {
+            font-size: 0.85rem;
+            color: $medium-text;
+            font-weight: 600;
+          }
+        }
+
+        .event-description {
+          font-size: 0.9rem;
+          color: $medium-text;
+          line-height: 1.5;
+          margin: 0 0 16px 0;
+          min-height: 40px;
+        }
+
+        .event-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-top: 16px;
+          border-top: 1px solid #e9ecef;
+
+          .event-date-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            .date-icon {
+              font-size: 1rem;
+              color: $primary-green;
+            }
+
+            .event-date {
+              font-size: 0.9rem;
+              font-weight: 600;
+              color: $dark-text;
+            }
+          }
+
+          .event-status {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+          }
+        }
+      }
+    }
+  }
+
+  .no-events-message {
+    text-align: center;
+    padding: 60px 20px;
+    background: $light-bg;
+    border-radius: 15px;
+
+    .no-events-icon {
+      font-size: 4rem;
+      color: $medium-text;
+      opacity: 0.5;
+      margin-bottom: 16px;
+    }
+
+    .no-events-text {
+      font-size: 1.1rem;
+      color: $medium-text;
+      margin: 0;
     }
   }
 }
 
-// ===== RESPONSIVE DESIGN =====
+// Spinner container
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
 
-// Móviles pequeños
+  ion-spinner {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: white;
+    font-size: 1rem;
+  }
+}
+
+// Alerta mock
+.alerta-mock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  margin: 10px;
+
+  ion-icon {
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: $dark-text;
+  }
+}
+
+// Barra de notificaciones
+.notification-bar {
+  --background: var(--ion-color-warning);
+  --color: var(--ion-color-warning-contrast);
+  
+  .notification-icon {
+    font-size: 1.5rem;
+    margin-right: 8px;
+  }
+  
+  .notification-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  ion-button {
+    --color: var(--ion-color-warning-contrast);
+    font-weight: 600;
+  }
+}
+
+// Modal de notificaciones
+.notifications-container {
+  padding: 16px;
+}
+
+.notification-item {
+  background: $light-bg;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--ion-color-warning);
+  
+  .notification-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    
+    .notification-type-icon {
+      font-size: 1.5rem;
+      margin-right: 12px;
+    }
+    
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: $dark-text;
+    }
+  }
+  
+  .notification-details {
+    margin-bottom: 16px;
+    
+    p {
+      margin: 8px 0;
+      color: $medium-text;
+      
+      strong {
+        color: $dark-text;
+      }
+    }
+    
+    ion-badge {
+      margin-left: 8px;
+    }
+  }
+  
+  .notification-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.no-notifications {
+  text-align: center;
+  padding: 40px 20px;
+  
+  ion-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+  }
+  
+  p {
+    color: $medium-text;
+    font-size: 1.1rem;
+  }
+}
+
 @media (max-width: 480px) {
   .dashboard-content {
     padding: 5px;
@@ -310,56 +525,93 @@
 
   .events-section {
     .events-header {
-      .events-icon {
-        font-size: 1.3rem;
+      padding: 15px;
+      flex-direction: column;
+      gap: 12px;
+
+      .header-left {
+        .events-icon {
+          font-size: 1.5rem;
+        }
+
+        .events-title {
+          font-size: 1.1rem;
+        }
       }
 
-      .events-title {
-        font-size: 1.1rem;
+      .events-count {
+        font-size: 0.9rem;
+        padding: 6px 12px;
       }
     }
 
-    .events-list {
-      gap: 12px;
+    .events-grid {
+      grid-template-columns: 1fr;
+      gap: 15px;
 
-      .event-item {
-        padding: 15px;
-        gap: 12px;
+      .event-card {
+        .event-card-header {
+          padding: 15px;
 
-        .event-indicator {
-          width: 40px;
-          height: 40px;
+          .event-icon-wrapper {
+            width: 40px;
+            height: 40px;
 
-          ion-icon {
-            font-size: 1.2rem;
+            .event-type-icon {
+              font-size: 1.3rem;
+            }
+          }
+
+          .event-type-label {
+            font-size: 0.95rem;
           }
         }
 
-        .event-content .event-main {
-          .event-title {
-            font-size: 0.9rem;
+        .event-card-content {
+          padding: 15px;
+
+          .event-animal-info {
+            .event-animal-name {
+              font-size: 1.1rem;
+            }
+
+            .event-animal-id {
+              font-size: 0.8rem;
+            }
           }
 
           .event-description {
-            font-size: 0.8rem;
-          }
-        }
-
-        .event-date-status {
-          .event-date {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
           }
 
-          .event-status {
-            font-size: 0.65rem;
+          .event-footer {
+            .event-date-wrapper {
+              .event-date {
+                font-size: 0.85rem;
+              }
+            }
           }
         }
       }
     }
   }
+
+  .notification-title {
+    font-size: 0.8rem !important;
+  }
+  
+  .notification-item {
+    .notification-header {
+      flex-direction: column;
+      align-items: flex-start;
+      
+      .notification-type-icon {
+        margin-bottom: 8px;
+      }
+    }
+  }
 }
 
-// Tablets
 @media (min-width: 481px) and (max-width: 768px) {
   .dashboard-content {
     padding: 8px;
@@ -374,9 +626,15 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
   }
+
+  .events-section {
+    .events-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+  }
 }
 
-// Desktop
 @media (min-width: 769px) {
   .dashboard-content {
     padding: 15px;
@@ -411,148 +669,17 @@
   }
 
   .events-section {
-    .events-header {
-      .events-icon {
-        font-size: 1.6rem;
-      }
-
-      .events-title {
-        font-size: 1.4rem;
-      }
-    }
-
-    .events-list {
-      gap: 18px;
-
-      .event-item {
-        padding: 25px;
-        gap: 18px;
-
-        .event-indicator {
-          width: 55px;
-          height: 55px;
-
-          ion-icon {
-            font-size: 1.5rem;
-          }
-        }
-
-        .event-content .event-main {
-          .event-title {
-            font-size: 1.1rem;
-          }
-
-          .event-description {
-            font-size: 0.9rem;
-          }
-        }
-      }
+    .events-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
     }
   }
 }
 
-// Barra de notificaciones
-.notification-bar {
-  --background: var(--ion-color-warning);
-  --color: var(--ion-color-warning-contrast);
-  
-  .notification-icon {
-    font-size: 1.5rem;
-    margin-right: 8px;
-  }
-  
-  .notification-title {
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-  
-  ion-button {
-    --color: var(--ion-color-warning-contrast);
-    font-weight: 600;
-  }
-}
-
-// Modal de notificaciones
-.notifications-container {
-  padding: 16px;
-}
-
-.notification-item {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-  border-left: 4px solid var(--ion-color-warning);
-  
-  .notification-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-    
-    .notification-type-icon {
-      font-size: 1.5rem;
-      margin-right: 12px;
-    }
-    
-    h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      color: var(--ion-color-dark);
-    }
-  }
-  
-  .notification-details {
-    margin-bottom: 16px;
-    
-    p {
-      margin: 8px 0;
-      color: var(--ion-color-medium);
-      
-      strong {
-        color: var(--ion-color-dark);
-      }
-    }
-    
-    ion-badge {
-      margin-left: 8px;
-    }
-  }
-  
-  .notification-actions {
-    display: flex;
-    justify-content: flex-end;
-  }
-}
-
-.no-notifications {
-  text-align: center;
-  padding: 40px 20px;
-  
-  ion-icon {
-    font-size: 3rem;
-    margin-bottom: 16px;
-  }
-  
-  p {
-    color: var(--ion-color-medium);
-    font-size: 1.1rem;
-  }
-}
-
-// Responsive
-@media (max-width: 768px) {
-  .notification-title {
-    font-size: 0.8rem !important;
-  }
-  
-  .notification-item {
-    .notification-header {
-      flex-direction: column;
-      align-items: flex-start;
-      
-      .notification-type-icon {
-        margin-bottom: 8px;
-      }
+@media (min-width: 1024px) {
+  .events-section {
+    .events-grid {
+      grid-template-columns: repeat(3, 1fr);
     }
   }
 }

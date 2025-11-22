@@ -1,9 +1,9 @@
 <ion-header [translucent]="true">
-  <ion-toolbar color="success">
+  <ion-toolbar style="--background: #A4C49A;">
     <ion-title>
       <div class="header-content">
         <div class="header-left">
-          <strong>AGRODATA</strong>
+          <strong>BOVINET</strong>
         </div>
         <div class="header-right">
           <span>RANCHO LA VAQUITA FELIZ</span>
@@ -16,7 +16,6 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="animals-content">
-  <!-- Contenedor principal con bordes redondeados -->
   <div class="main-container">
     
     <!-- Barra de búsqueda y filtros -->
@@ -54,7 +53,7 @@
         [color]="selectedSexFilter === 'Hembra' ? 'success' : 'medium'"
         (click)="onSexFilterChange('Hembra')"
         class="sex-filter-btn">
-        <ion-icon name="female-outline" slot="start"></ion-icon>
+        <img src="../../assets/icon/icons8-cow-96.png" alt="Hembra" class="filter-icon">
         Hembras ({{ totalHembras }})
       </ion-button>
       
@@ -63,14 +62,13 @@
         [color]="selectedSexFilter === 'Macho' ? 'tertiary' : 'medium'"
         (click)="onSexFilterChange('Macho')"
         class="sex-filter-btn">
-        <ion-icon name="male-outline" slot="start"></ion-icon>
+        <img src="../../assets/icon/icons8-bull-100.png" alt="Macho" class="filter-icon">
         Machos ({{ totalMachos }})
       </ion-button>
     </div>
 
     <!-- Tabla de animales -->
     <div class="table-container">
-      <!-- Header de la tabla -->
       <div class="table-header">
         <div class="header-cell">ID</div>
         <div class="header-cell">SINIGA</div>
@@ -80,11 +78,12 @@
         <div class="header-cell">F. Nacimiento</div>
         <div class="header-cell">Edad</div>
         <div class="header-cell">Estado</div>
+        <!-- Nueva columna Estado Reproductivo -->
+        <div class="header-cell">Estado Reprod.</div>
         <div class="header-cell">Sexo</div>
-        <div class="header-cell action-cell">Acciones</div>
+        <div class="header-cell header-actions">Acciones</div>
       </div>
 
-      <!-- Cuerpo de la tabla -->
       <div class="table-body">
         <div *ngFor="let animal of filteredAnimals" class="table-row">
           <div class="body-cell">{{ animal.id }}</div>
@@ -92,30 +91,49 @@
           <div class="body-cell">{{ animal.nombre }}</div>
           <div class="body-cell">{{ animal.madre || '-' }}</div>
           <div class="body-cell">{{ animal.padre || '-' }}</div>
-          <div class="body-cell">{{ formatDate(animal.fechaNacimiento) }}</div>
+          <div class="body-cell">{{ animal.fechaNacimiento ? formatDate(animal.fechaNacimiento) : '--' }}</div>
           <div class="body-cell">{{ animal.edad }}</div>
           <div class="body-cell">
-            <ion-badge [color]="getStatusColor(animal.estado)" class="status-badge">
+            <ion-badge [color]="getStatusColor(animal.estado || 'Bueno')" class="status-badge">
               {{ animal.estado }}
             </ion-badge>
           </div>
+          <!-- Mostrar estado reproductivo según el sexo -->
           <div class="body-cell">
-            <ion-badge [color]="animal.sexo === 'Hembra' ? 'danger' : 'primary'">
+            <ion-badge 
+              *ngIf="animal.estadoReproductivo" 
+              [color]="getEstadoReproductivoColor(animal.estadoReproductivo)" 
+              class="reprod-badge">
+              {{ animal.estadoReproductivo }}
+            </ion-badge>
+            <span *ngIf="!animal.estadoReproductivo" class="no-data">-</span>
+          </div>
+          <div class="body-cell">
+            <ion-badge [color]="animal.sexo === 'Hembra' ? 'danger' : 'primary'" class="sex-badge">
               {{ animal.sexo }}
             </ion-badge>
           </div>
-          <div class="body-cell action-cell">
-            <ion-button size="small" fill="clear" color="primary" (click)="openEditModal(animal); $event.stopPropagation()">
+          <div class="body-cell body-actions">
+            <ion-button 
+              size="small" 
+              fill="clear" 
+              color="primary" 
+              class="action-btn"
+              (click)="openEditModal(animal); $event.stopPropagation()">
               <ion-icon name="create-outline"></ion-icon>
             </ion-button>
-            <ion-button size="small" fill="clear" color="danger" (click)="confirmDelete(animal); $event.stopPropagation()">
+            <ion-button 
+              size="small" 
+              fill="clear" 
+              color="danger" 
+              class="action-btn"
+              (click)="confirmDelete(animal); $event.stopPropagation()">
               <ion-icon name="trash-outline"></ion-icon>
             </ion-button>
           </div>
         </div>
       </div>
 
-      <!-- Mensaje cuando no hay resultados -->
       <div *ngIf="filteredAnimals.length === 0" class="no-results">
         <ion-icon name="search-outline"></ion-icon>
         <h3>No se encontraron animales</h3>
@@ -244,6 +262,24 @@
                     placeholder="0"
                     min="0">
                   </ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+
+            <!-- Agregar campo Estado Reproductivo en el modal -->
+            <ion-row *ngIf="currentAnimal.sexo === 'Hembra'">
+              <ion-col size="12">
+                <ion-item>
+                  <ion-label position="stacked">Estado Reproductivo</ion-label>
+                  <ion-select [(ngModel)]="currentAnimal.estadoReproductivo">
+                    <ion-select-option value="Limpia">Limpia</ion-select-option>
+                    <ion-select-option value="Sucia">Sucia</ion-select-option>
+                    <ion-select-option value="A calor">A calor</ion-select-option>
+                    <ion-select-option value="Vacia">Vacía</ion-select-option>
+                    <ion-select-option value="Preñada">Preñada</ion-select-option>
+                    <ion-select-option value="Seca">Seca</ion-select-option>
+                    <ion-select-option value="Reto">Reto</ion-select-option>
+                  </ion-select>
                 </ion-item>
               </ion-col>
             </ion-row>

@@ -4,18 +4,27 @@ import { Capacitor } from "@capacitor/core";
 
 export interface Animal {
   id: string;
-  siniga: string;
+  siniga?: string;
   nombre: string;
-  madre: string;
-  padre: string;
-  fechaNacimiento: string;
-  edad: string;
+  madre?: string;
+  padre?: string;
+  fechaNacimiento?: string;
+  edad?: string;
   sexo: "Hembra" | "Macho";
-  estado: "Excelente" | "Bueno" | "Regular" | "Enfermo";
+  estado?: "Excelente" | "Bueno" | "Regular" | "Enfermo";
   peso?: number | null;
-  observaciones: string;
-  fechaCreacion: string;
-  fechaActualizacion: string;
+  observaciones?: string;
+  fechaCreacion?: string;
+  fechaActualizacion?: string;
+  edadMeses?: number;
+  activoReproduccion?: boolean;
+  // CORREGIR: Permitir cualquier string para estadoReproductivo
+  estadoReproductivo?: string; // Cambiar de enum específico a string
+  ultimoParto?: string;
+  diasPostParto?: number;
+  ultimaMonta?: string;
+  ultimaInseminacion?: string;
+  raza?: string;
 }
 
 export interface Evento {
@@ -46,28 +55,41 @@ export class DatabaseService {
   constructor() {
     console.log("🏗️ DatabaseService inicializado");
   }
+//Metodo para la gestion de cada raza 
+getDiasGestacionPorRaza(raza: string): number {
+  const diasGestacion: { [key: string]: number } = {
+    'Angus': 283,
+    'Holstein': 279,
+    'Jersey': 279,
+    'Hereford': 285,
+    'Charoláis': 289,
+    'Simental': 287,
+    'Brahman': 282,
+    'Suizo': 290,
+    'Indubrasil': 280,
+    'Guzerat': 291
+  };
+  return diasGestacion[raza] || 283; // Default: 283 días
+}
 
 private async executeQuery(sql: string, params: any[] = []): Promise<any> {
-  console.log('🔍 Ejecutando query:', sql);
-  console.log('📋 Parámetros:', params);
-  
+  console.log(' [x] Ejecutando query:', sql);
+  console.log('  Parámetros:', params);
+
   if (!this.db || !this.isReady()) {
-    console.error('❌ BD no disponible en executeQuery');
+    console.error('  BD no disponible en executeQuery');
     throw new Error('Base de datos no disponible');
   }
-  
+
   try {
     const result = await this.db.run(sql, params);
-    console.log('✅ Query ejecutado, resultado completo:', JSON.stringify(result));
-    
-    // CORRECCIÓN: Usar las propiedades correctas
+    console.log('  Query ejecutado, resultado completo:', JSON.stringify(result));
     console.log('Cambios:', result.changes?.changes || 0);
     console.log('LastID:', result.changes?.lastId || 0);
     console.log('¿Éxito?', (result.changes?.changes || 0) > 0);
-    
     return result;
   } catch (error) {
-    console.error('❌ Error en executeQuery:', error);
+    console.error('  Error en executeQuery:', error);
     console.error('Consulta fallida:', sql);
     console.error('Parámetros:', params);
     throw error;
@@ -76,38 +98,34 @@ private async executeQuery(sql: string, params: any[] = []): Promise<any> {
 //metodo para generar id aotomatico 
 // En database.service.ts - agregar este método
 async generateSequentialId(): Promise<string> {
-    try {
-        if (!this.db || !this.isReady()) {
-            return `A-001`; // Fallback
-        }
-
-        // Obtener el último ID de la base de datos
-        const result = await this.db.query(
-            "SELECT id FROM animals ORDER BY fechaCreacion DESC LIMIT 1"
-        );
-
-        if (result.values && result.values.length > 0) {
-            const lastId = result.values[0].id;
-            
-            // Extraer el número del último ID (ejemplo: "A-001" -> 1)
-            const match = lastId.match(/A-(\d+)/);
-            if (match && match[1]) {
-                const lastNumber = parseInt(match[1]);
-                const newNumber = lastNumber + 1;
-                return `A-${newNumber.toString().padStart(3, '0')}`;
-            }
-        }
-
-        // Si no hay animales, empezar desde 001
-        return `A-001`;
-
-    } catch (error) {
-        console.error('Error generando ID secuencial:', error);
-        // Fallback: usar timestamp
-        return `A-${Date.now().toString().slice(-3)}`;
+  try {
+    if (!this.db || !this.isReady()) {
+      return 'A-001'; // Fallback
     }
-}
 
+    // Obtener el último ID de la base de datos
+    const result = await this.db.query(
+      "SELECT id FROM animals ORDER BY fechaCreacion DESC LIMIT 1"
+    );
+
+    if (result.values && result.values.length > 0) {
+      const lastId = result.values[0].id;
+      // Extraer el número del último ID (ejemplo: "A-001" -> 1)
+      const match = lastId.match(/A-(\d+)/);
+      if (match && match[1]) {
+        const lastNumber = parseInt(match[1]);
+        const newNumber = lastNumber + 1;
+        return `A-${newNumber.toString().padStart(3, '0')}`;
+      }
+    }
+    // Si no hay animales, empezar desde 001
+    return 'A-001';
+  } catch (error) {
+    console.error('Error generando ID secuencial:', error);
+    // Fallback: usar timestamp
+    return `A-${Date.now().toString().slice(-3)}`;
+  }
+}
 
 //Metodod para hacer publico 
 async executePublicQuery(sql: string, params: any[] = []): Promise<any> {
@@ -136,15 +154,14 @@ async executePublicQuery(sql: string, params: any[] = []): Promise<any> {
 }
 
 private async initializeAndroid(): Promise<boolean> {
-  console.log('🤖 Inicializando SQLite en Android...');
-  
+  console.log('  Initializando SQLite en Android...');
   try {
     // PASO 1: Cerrar y eliminar conexiones existentes
-    console.log('🧹 Limpiando conexiones existentes...');
+    console.log('  Limpiando conexiones existentes...');
     await this.cleanupConnections();
 
     // PASO 2: Crear nueva conexión
-    console.log('🔗 Creando nueva conexión: ' + this.DB_NAME);
+    console.log('  Creando nueva conexión: ' + this.DB_NAME);
     this.db = await this.sqlite.createConnection(
       this.DB_NAME,
       false,
@@ -154,22 +171,22 @@ private async initializeAndroid(): Promise<boolean> {
     );
 
     // PASO 3: Abrir base de datos
-    console.log('🔓 Abriendo base de datos...');
+    console.log('  [🖠] Abriendo base de datos...');
     await this.db.open();
 
     // PASO 4: Configurar tablas (esto creará las tablas si no existen)
-    console.log('🏗️ Configurando tablas...');
+    console.log('  [🖠] Configurando tablas...');
     await this.setupDatabase();
 
     // PASO 5: Verificar que las columnas existen
-    console.log('🔍 Verificando estructura de tablas...');
+    console.log('  [🖠] Verificando estructura de tablas...');
     await this.debugTableStructure();
 
     this.isInitialized = true;
-    console.log('✅ SQLite en Android lista - Inicialización exitosa');
+    console.log('  [🖠] SQLite en Android lista - Inicialización exitosa');
     return true;
   } catch (error) {
-    console.error('❌ Error en Android:', error);
+    console.error('  [🖠] Error en Android:', error);
     this.isInitialized = false;
     this.db = null;
     throw error;
@@ -201,69 +218,68 @@ private async initializeAndroid(): Promise<boolean> {
   }
 
   private async initializeIOS(): Promise<boolean> {
-    try {
-      // Similar a Android pero con ajustes específicos para iOS si son necesarios
-      await this.cleanupConnections();
+  try {
+    // Similar a Android pero con ajustes específicos para iOS si son necesarios
+    await this.cleanupConnections();
 
-      this.db = await this.sqlite.createConnection(
-        this.DB_NAME,
-        false,
-        'no-encryption',
-        this.DB_VERSION,
-        false
-      );
+    this.db = await this.sqlite.createConnection(
+      this.DB_NAME,
+      false,
+      'no-encryption',
+      this.DB_VERSION,
+      false
+    );
 
-      await this.db.open();
-      await this.setupDatabase();
+    await this.db.open();
+    await this.setupDatabase();
 
-      this.isInitialized = true;
-      console.log("✅ SQLite en iOS lista");
-      return true;
-    } catch (error) {
-      console.error('❌ Error en iOS:', error);
-      throw error;
-    }
+    this.isInitialized = true;
+    console.log("  SQLite en iOS lista");
+    return true;
+  } catch (error) {
+    console.error('Error en iOS:', error);
+    throw error;
   }
+}
 
-  private async initializeWeb(): Promise<boolean> {
-    try {
-      // Verificar si jeep-sqlite está disponible
-      const jeepReady = await this.checkJeepSQLite();
-      
-      if (!jeepReady) {
-        console.warn("⚠️ JeepSQLite no disponible. Usando modo mock.");
-        this.useMockDatabase = true;
-        this.isInitialized = true;
-        return true;
-      }
-
-      // Inicializar WebStore
-      await this.sqlite.initWebStore();
-      console.log("🌐 WebStore inicializado");
-
-      // Crear conexión
-      this.db = await this.sqlite.createConnection(
-        this.DB_NAME,
-        false,
-        'no-encryption',
-        this.DB_VERSION,
-        false
-      );
-
-      // Abrir base de datos
-      await this.db.open();
-
-      // Configurar tablas
-      await this.setupDatabase();
-
+ private async initializeWeb(): Promise<boolean> {
+  try {
+    // Verificar si jeep-sqlite está disponible
+    const jeepReady = await this.checkJeepSQLite();
+    if (!jeepReady) {
+      console.warn(" ▲ JeepSQLite no disponible. Usando modo mock.");
+      this.useMockDatabase = true;
       this.isInitialized = true;
-      console.log("✅ SQLite en Web lista");
       return true;
-    } catch (error) {
-      console.error('❌ Error en Web:', error);
-      throw error;
     }
+
+    // Inicializar WebStore
+    await this.sqlite.initWebStore();
+    console.log(" 💤 WebStore inicializado");
+
+    // Crear conexión
+    this.db = await this.sqlite.createConnection(
+      this.DB_NAME,
+      false,
+      'no-encryption',
+      this.DB_VERSION,
+      false
+    );
+
+    // Abrir base de datos
+    await this.db.open();
+
+    // Configurar tablas
+    await this.setupDatabase();
+
+    this.isInitialized = true;
+    console.log("  SQLite en Web lista");
+    return true;
+  } catch (error) {
+    console.error('Error en Web:', error);
+    throw error;
   }
+}
 
   private async cleanupConnections(): Promise<void> {
     try {
@@ -275,27 +291,27 @@ private async initializeAndroid(): Promise<boolean> {
     }
   }
 
-  private async checkJeepSQLite(): Promise<boolean> {
-    return new Promise((resolve) => {
-      if ((window as any).jeepSQLiteReady) {
-        resolve(true);
-        return;
-      }
+ private async checkJeepSQLite(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if ((window as any).jeepSQLiteReady) {
+      resolve(true);
+      return;
+    }
 
-      const timeout = setTimeout(() => {
-        window.removeEventListener('jeep-sqlite-ready', listener);
-        resolve(false);
-      }, 2000);
+    const timeout = setTimeout(() => {
+      window.removeEventListener('jeep-sqlite-ready', listener);
+      resolve(false);
+    }, 2000);
 
-      const listener = () => {
-        clearTimeout(timeout);
-        window.removeEventListener('jeep-sqlite-ready', listener);
-        resolve(true);
-      };
+    const listener = () => {
+      clearTimeout(timeout);
+      window.removeEventListener('jeep-sqlite-ready', listener);
+      resolve(true);
+    };
 
-      window.addEventListener('jeep-sqlite-ready', listener);
-    });
-  }
+    window.addEventListener('jeep-sqlite-ready', listener);
+  });
+}
 
 async debugEventosTable() {
   try {
@@ -319,66 +335,202 @@ async debugEventosTable() {
 
  private async setupDatabase(): Promise<void> {
   if (!this.db) throw new Error('Base de datos no inicializada');
-  
+
   await this.createTables();
+  await this.migrateDatabase(); // ← AÑADIR ESTA LÍNEA
   await this.seedInitialData();
-  
+
   // Debug de tablas
   await this.debugEventosTable();
   await this.debugTableStructure();
-  
+
   const stats = await this.getStats();
   console.log(`📊 Estadísticas iniciales: ${stats.animals} animales, ${stats.eventos} eventos`);
 }
   // ==================== OPERACIONES DE BASE DE DATOS ====================
 
-  // CORREGIR en database.service.ts - método createTables
 private async createTables(): Promise<void> {
   if (!this.db) throw new Error('Base de datos no inicializada');
-  
+
+  // ✅ SCHEMA CORREGIDO - SIN COMENTARIOS SQL
   const schema = `
     CREATE TABLE IF NOT EXISTS animals (
-        id TEXT PRIMARY KEY,
-        siniga TEXT NOT NULL UNIQUE,
-        nombre TEXT NOT NULL,
-        madre TEXT,
-        padre TEXT,
-        fechaNacimiento TEXT NOT NULL,
-        edad TEXT,
-        sexo TEXT NOT NULL CHECK (sexo IN ('Hembra', 'Macho')),
-        estado TEXT NOT NULL CHECK (estado IN ('Excelente', 'Bueno', 'Regular', 'Enfermo')),
-        peso REAL,
-        observaciones TEXT,
-        fechaCreacion TEXT NOT NULL,
-        fechaActualizacion TEXT NOT NULL,
-        eliminado INTEGER DEFAULT 0,
-        razonEliminacion TEXT,
-        fechaEliminacion TEXT
+      id TEXT PRIMARY KEY,
+      siniga TEXT NOT NULL UNIQUE,
+      nombre TEXT NOT NULL,
+      madre TEXT,
+      padre TEXT,
+      fechaNacimiento TEXT NOT NULL,
+      edad TEXT,
+      sexo TEXT NOT NULL CHECK (sexo IN ('Hembra', 'Macho')),
+      estado TEXT NOT NULL CHECK (estado IN ('Excelente', 'Bueno', 'Regular', 'Enfermo')),
+      peso REAL,
+      observaciones TEXT,
+      fechaCreacion TEXT NOT NULL,
+      fechaActualizacion TEXT NOT NULL,
+      eliminado INTEGER DEFAULT 0,
+      razonEliminacion TEXT,
+      fechaEliminacion TEXT,
+      edadMeses INTEGER DEFAULT 0,
+      activoReproduccion INTEGER DEFAULT 1,
+      estadoReproductivo TEXT,
+      ultimoParto TEXT,
+      diasPostParto INTEGER DEFAULT 0,
+      ultimaMonta TEXT,
+      ultimaInseminacion TEXT,
+      raza TEXT
     );
-    
+
     CREATE TABLE IF NOT EXISTS eventos (
-        id TEXT PRIMARY KEY,
-        fecha TEXT NOT NULL,
-        animalId TEXT NOT NULL,
-        animalNombre TEXT NOT NULL,
-        tipo TEXT NOT NULL CHECK (tipo IN ('Celo', 'Vacunación', 'Inseminación', 'Parto')),
-        estado TEXT NOT NULL CHECK (estado IN ('Programado', 'Realizado', 'Pendiente', 'Alerta')),
-        notas TEXT,
-        fechaCreacion TEXT NOT NULL,
-        fechaActualizacion TEXT NOT NULL,
-        recordatorio INTEGER DEFAULT 1,
-        FOREIGN KEY (animalId) REFERENCES animals (id) ON DELETE CASCADE
+      id TEXT PRIMARY KEY,
+      fecha TEXT NOT NULL,
+      animalId TEXT NOT NULL,
+      animalNombre TEXT NOT NULL,
+      tipo TEXT NOT NULL CHECK (tipo IN ('Celo', 'Vacunación', 'Inseminación', 'Parto', 'Secado', 'Reto', 'Test Preñez', 'Revisión')),
+      estado TEXT NOT NULL CHECK (estado IN ('Programado', 'Realizado', 'Pendiente', 'Alerta')),
+      notas TEXT,
+      fechaCreacion TEXT NOT NULL,
+      fechaActualizacion TEXT NOT NULL,
+      recordatorio INTEGER DEFAULT 1,
+      protocoloParto INTEGER DEFAULT 0,
+      diasPostParto INTEGER DEFAULT 0,
+      FOREIGN KEY (animalId) REFERENCES animals (id) ON DELETE CASCADE
     );
   `;
-  
+
   try {
     await this.db.execute(schema);
-    console.log("✅ Tablas creadas correctamente");
+    console.log("✅ Tablas creadas/actualizadas correctamente");
   } catch (error) {
     console.error("❌ Error al crear tablas:", error);
     throw error;
   }
 }
+
+async actualizarTablaEventos(): Promise<boolean> {
+  try {
+    console.log("🔄 Actualizando estructura de tabla eventos...");
+    
+    if (!this.db || !this.isReady()) {
+      console.log("❌ BD no disponible");
+      return false;
+    }
+
+    // 1. Crear tabla temporal con la estructura correcta
+    await this.db.execute(`
+      CREATE TABLE IF NOT EXISTS eventos_temp (
+        id TEXT PRIMARY KEY,
+        fecha TEXT NOT NULL,
+        animalId TEXT NOT NULL,
+        animalNombre TEXT NOT NULL,
+        tipo TEXT NOT NULL CHECK (tipo IN ('Celo', 'Vacunación', 'Inseminación', 'Parto', 'Secado', 'Reto', 'Test Preñez', 'Revisión')),
+        estado TEXT NOT NULL CHECK (estado IN ('Programado', 'Realizado', 'Pendiente', 'Alerta')),
+        notas TEXT,
+        fechaCreacion TEXT NOT NULL,
+        fechaActualizacion TEXT NOT NULL,
+        recordatorio INTEGER DEFAULT 1,
+        protocoloParto INTEGER DEFAULT 0,
+        diasPostParto INTEGER DEFAULT 0,
+        FOREIGN KEY (animalId) REFERENCES animals (id) ON DELETE CASCADE
+      )
+    `);
+
+    // 2. Copiar datos existentes (si hay)
+    try {
+      await this.db.execute(`
+        INSERT INTO eventos_temp 
+        SELECT id, fecha, animalId, animalNombre, tipo, estado, notas, 
+               fechaCreacion, fechaActualizacion, recordatorio,
+               COALESCE(protocoloParto, 0), COALESCE(diasPostParto, 0)
+        FROM eventos
+      `);
+    } catch (copyError) {
+      console.log("ℹ️ No hay datos existentes para copiar o hay error en estructura");
+    }
+
+    // 3. Eliminar tabla vieja
+    await this.db.execute(`DROP TABLE IF EXISTS eventos`);
+
+    // 4. Renombrar tabla temporal
+    await this.db.execute(`ALTER TABLE eventos_temp RENAME TO eventos`);
+
+    console.log("✅ Tabla eventos actualizada correctamente");
+    return true;
+
+  } catch (error) {
+    console.error("❌ Error actualizando tabla eventos:", error);
+    return false;
+  }
+}
+
+// En DatabaseService - método para migrar base de datos existente
+async migrateDatabase(): Promise<boolean> {
+  try {
+    console.log("🔄 Iniciando migración de base de datos...");
+    
+    if (!this.db || !this.isReady()) {
+      console.log("❌ BD no disponible para migración");
+      return false;
+    }
+
+    // Verificar y agregar columnas faltantes
+    const tableInfo = await this.db.query("PRAGMA table_info(animals)");
+    const existingColumns = tableInfo.values?.map((col: any) => col.name) || [];
+    
+    console.log("📊 Columnas existentes en animals:", existingColumns);
+
+    const requiredColumns = [
+      'edadMeses', 'activoReproduccion', 'estadoReproductivo', 
+      'ultimoParto', 'diasPostParto', 'ultimaMonta', 'ultimaInseminacion', 'raza'
+    ];
+
+    const columnsToAdd = requiredColumns.filter(col => !existingColumns.includes(col));
+    
+    if (columnsToAdd.length > 0) {
+      console.log("📝 Agregando columnas faltantes:", columnsToAdd);
+      
+      for (const column of columnsToAdd) {
+        let columnType = 'TEXT';
+        if (column === 'edadMeses' || column === 'diasPostParto') columnType = 'INTEGER DEFAULT 0';
+        if (column === 'activoReproduccion') columnType = 'INTEGER DEFAULT 1';
+        
+        try {
+          await this.db.execute(`ALTER TABLE animals ADD COLUMN ${column} ${columnType}`);
+          console.log(`✅ Columna ${column} agregada`);
+        } catch (error) {
+          console.log(`⚠️ Columna ${column} ya existe:`, error);
+        }
+      }
+    }
+
+    // ✅ NUEVO: ACTUALIZAR REGISTROS EXISTENTES CON VALORES POR DEFECTO
+    console.log("🔄 Actualizando registros existentes con valores por defecto...");
+    
+    await this.db.execute(`
+      UPDATE animals SET 
+        edadMeses = COALESCE(edadMeses, 0),
+        activoReproduccion = COALESCE(activoReproduccion, 1),
+        estadoReproductivo = COALESCE(estadoReproductivo, 
+          CASE 
+            WHEN sexo = 'Hembra' THEN 'Limpia' 
+            WHEN sexo = 'Macho' THEN 'Semental'
+            ELSE 'Limpia'
+          END
+        ),
+        raza = COALESCE(raza, 'Angus')
+      WHERE edadMeses IS NULL OR estadoReproductivo IS NULL
+    `);
+
+    console.log("✅ Migración de base de datos completada");
+    return true;
+
+  } catch (error) {
+    console.error("❌ Error en migración de BD:", error);
+    return false;
+  }
+}
+
+
 
 async debugTableStructure(): Promise<void> {
   if (!this.db || !this.isReady()) {
@@ -441,38 +593,104 @@ async debugTableStructure(): Promise<void> {
 
 async getAllAnimals(includeDeleted: boolean = false): Promise<Animal[]> {
   if (!this.db || !this.isReady()) {
-    console.warn("⚠️ Base de datos no disponible");
+    console.warn(" ▲ Base de datos no disponible");
     return [];
   }
 
   try {
-    // TEMPORAL: Usar consulta sin la columna eliminado hasta que se cree la tabla correctamente
-    let sql = "SELECT * FROM animals";
-    // if (!includeDeleted) {
-    //   sql += " WHERE eliminado = 0";  // <-- Comentado temporalmente
-    // }
+    let sql = `
+      SELECT
+        id, siniga, nombre, madre, padre, fechaNacimiento, edad, sexo, estado,
+        peso, observaciones, fechaCreacion, fechaActualizacion, eliminado,
+        COALESCE(edadMeses, 0) as edadMeses,
+        COALESCE(activoReproduccion, 1) as activoReproduccion,
+        estadoReproductivo,  -- ⚠️ CAMBIO IMPORTANTE: Usar directamente el valor de la BD
+        ultimoParto, diasPostParto, ultimaMonta, ultimaInseminacion,
+        COALESCE(raza, 'Angus') as raza
+      FROM animals
+    `;
+
+    if (!includeDeleted) {
+      sql += " WHERE eliminado = 0 OR eliminado IS NULL";
+    }
+
     sql += " ORDER BY nombre";
 
     const result = await this.db.query(sql);
-    console.log(`📊 Animales obtenidos: ${result.values?.length || 0}`);
+    console.log("✅ Animales obtenidos:", result.values?.length || 0);
+    
+    // DEBUG: Mostrar estados reproductivos
+    if (result.values) {
+      result.values.forEach((animal: any) => {
+        console.log(`🔍 ${animal.nombre} - Estado BD: "${animal.estadoReproductivo}"`);
+      });
+    }
+    
     return result.values || [];
   } catch (error) {
-    console.error("❌ Error obteniendo animales:", error);
-    
-    // Si falla, intentar recrear las tablas
-    try {
-      console.log('🔄 Intentando recrear tablas...');
-      await this.setupDatabase();
-      
-      // Intentar nuevamente
-      const result = await this.db.query("SELECT * FROM animals ORDER BY nombre");
-      return result.values || [];
-    } catch (retryError) {
-      console.error('❌ Error en segundo intento:', retryError);
-      return [];
-    }
+    console.error("✕ Error obteniendo animales:", error);
+    return [];
   }
 }
+// Agrega este método en DatabaseService
+async repararBaseDatosCompleta(): Promise<boolean> {
+  try {
+    console.log("🔧 Iniciando reparación completa de base de datos...");
+    
+    // 1. Recrear base de datos
+    await this.recreateDatabase();
+    
+    // 2. Forzar migración completa
+    await this.migrateDatabase();
+    
+    // 3. Actualizar tabla eventos si es necesario
+    await this.actualizarTablaEventos();
+    
+    // 4. Verificar y corregir todos los animales
+    const animales = await this.getAllAnimals(true);
+    console.log(`🔧 Reparando ${animales.length} animales...`);
+    
+    for (const animal of animales) {
+      const animalReparado = {
+        ...animal,
+        edadMeses: animal.edadMeses || this.calcularEdadDesdeFecha(animal.fechaNacimiento),
+        activoReproduccion: animal.activoReproduccion ?? true,
+        estadoReproductivo: animal.estadoReproductivo || 
+          (animal.sexo === 'Hembra' ? 'Limpia' : 'Semental'),
+        raza: animal.raza || 'Angus'
+      };
+      
+      await this.updateAnimal(animalReparado);
+    }
+    
+    console.log("✅ Reparación completada");
+    return true;
+    
+  } catch (error) {
+    console.error("❌ Error en reparación:", error);
+    return false;
+  }
+}
+
+// Agrega este método auxiliar también en DatabaseService
+private calcularEdadDesdeFecha(fechaNacimiento?: string): number {
+  if (!fechaNacimiento) return 24; // Valor por defecto
+  
+  try {
+    const nacimiento = new Date(fechaNacimiento);
+    const hoy = new Date();
+    const diffMeses = (hoy.getFullYear() - nacimiento.getFullYear()) * 12 + 
+                     (hoy.getMonth() - nacimiento.getMonth());
+    return Math.max(0, diffMeses);
+  } catch {
+    return 24;
+  }
+}
+
+
+
+
+
 
 //Metodo para identificar tablas 
 async checkTableExists(tableName: string): Promise<boolean> {
@@ -632,73 +850,80 @@ async debugDatabase(): Promise<void> {
 // CORREGIR el método insertAnimal - ELIMINAR el comentario dentro del string SQL
 // En database.service.ts - modificar insertAnimal
 async insertAnimal(animal: Animal): Promise<boolean> {
-    console.log('🔴 DatabaseService.insertAnimal llamado con:', JSON.stringify(animal));
+  console.log('DatabaseService.insertAnimal llamado con:', JSON.stringify(animal, null, 2));
+  
+  if (!this.isReady()) {
+    console.log('Base de datos no disponible');
+    return false;
+  }
 
-    if (!this.isReady()) {
-        console.log('❌ Base de datos no disponible');
-        return false;
+  try {
+    // VERIFICAR QUE SINIGA NO ESTÉ VACÍO
+    if (!animal.siniga || animal.siniga.trim() === "") {
+      console.log('SINIGA es requerido');
+      return false;
     }
 
-    try {
-        // VERIFICAR QUE SINIGA NO ESTÉ VACÍO
-        if (!animal.siniga || animal.siniga.trim() === '') {
-            console.log('❌ SINIGA es requerido');
-            return false;
-        }
+    console.log('🔍 Verificando SINIGA único:', animal.siniga);
+    const existing = await this.db!.query(
+      "SELECT id FROM animals WHERE siniga = ?",
+      [animal.siniga]
+    );
 
-        console.log('🔴 Verificando SINIGA único:', animal.siniga);
-        const existing = await this.db!.query( // CORREGIDO: this.db en lugar de this.db1
-            "SELECT id FROM animals WHERE siniga = ?",
-            [animal.siniga]
-        );
-
-        if (existing.values && existing.values.length > 0) {
-            console.log('❌ Ya existe un animal con SINIGA:', animal.siniga);
-            return false;
-        }
-
-        const finalId = animal.id || await this.generateSequentialId(); // Usar ID secuencial
-        
-        const sql = `
-            INSERT INTO animals (
-                id, siniga, nombre, madre, padre, fechaNacimiento, edad, sexo,
-                estado, peso, observaciones, fechaCreacion, fechaActualizacion
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        const params = [
-            finalId,
-            animal.siniga,
-            animal.nombre,
-            animal.madre || null,
-            animal.padre || null,
-            animal.fechaNacimiento,
-            animal.edad || "",
-            animal.sexo,
-            animal.estado,
-            animal.peso,
-            animal.observaciones || "",
-            animal.fechaCreacion || new Date().toISOString(),
-            animal.fechaActualizacion || new Date().toISOString(),
-        ];
-
-        console.log('🟢 Ejecutando inserción...');
-        const result = await this.executeQuery(sql, params);
-        const changes = result.changes?.changes || 0;
-
-        if (changes > 0) {
-            console.log(`✅ Animal insertado: ${animal.nombre} (ID: ${finalId}, SINIGA: ${animal.siniga})`);
-            return true;
-        } else {
-            console.log('⚠️ No se insertó ningún registro. Resultado:', result);
-            return false;
-        }
-    } catch (error) {
-        console.error("❌ Error insertando animal:", error);
-        return false;
+    if (existing.values && existing.values.length > 0) {
+      console.log(' ❌ Ya existe un animal con SINIGA:', animal.siniga);
+      return false;
     }
+
+    const finalId = animal.id || await this.generateSequentialId();
+    
+    // ⚠️ CORRECCIÓN: Incluir estadoReproductivo en el INSERT
+    const sql = `
+      INSERT INTO animals (
+        id, siniga, nombre, madre, padre, fechaNacimiento, edad, sexo,
+        estado, peso, observaciones, fechaCreacion, fechaActualizacion,
+        edadMeses, activoReproduccion, estadoReproductivo, raza
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const params = [
+      finalId,
+      animal.siniga,
+      animal.nombre,
+      animal.madre || null,
+      animal.padre || null,
+      animal.fechaNacimiento,
+      animal.edad || "",
+      animal.sexo,
+      animal.estado,
+      animal.peso,
+      animal.observaciones || "",
+      animal.fechaCreacion || new Date().toISOString(),
+      animal.fechaActualizacion || new Date().toISOString(),
+      animal.edadMeses || 0,
+      animal.activoReproduccion ? 1 : 0,
+      animal.estadoReproductivo || 'Limpia', // ⚠️ Asegurar que se guarde
+      animal.raza || 'Angus'
+    ];
+
+    console.log('🔍 Parámetros del INSERT:', params);
+    console.log('❶ Ejecutando inserción...');
+    
+    const result = await this.executeQuery(sql, params);
+    const changes = result.changes?.changes || 0;
+    
+    if (changes > 0) {
+      console.log(`✅ Animal insertado: ${animal.nombre} (ID: ${finalId}, SINIGA: ${animal.siniga}, Estado: ${animal.estadoReproductivo})`);
+      return true;
+    } else {
+      console.log('❌ No se insertó ningún registro. Resultado:', result);
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Error insertando animal:", error);
+    return false;
+  }
 }
-
 //generar Ziniga 
 async generateUniqueSiniga(): Promise<string> {
   const prefix = 'EJ:H';
@@ -746,15 +971,14 @@ async checkSinigaExists(siniga: string): Promise<boolean> {
 async insertEvento(evento: any): Promise<boolean> {
   try {
     if (!this.db || !this.isReady()) {
-      console.error('❌ BD no disponible para insertar evento');
+      console.error(' BD no disponible para insertar evento');
       return false;
     }
 
-    console.log('📝 Insertando evento en BD:', evento);
-    
+    console.log(" Insertando evento en BD:", evento);
     const sql = `
       INSERT INTO eventos (
-        id, fecha, animalId, animalNombre, tipo, estado, notas, 
+        id, fecha, animalId, animalNombre, tipo, estado, notas,
         fechaCreacion, fechaActualizacion, recordatorio
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
@@ -766,7 +990,7 @@ async insertEvento(evento: any): Promise<boolean> {
       evento.animalNombre,
       evento.tipo,
       evento.estado,
-      evento.notas || '',
+      evento.notas || "",
       evento.fechaCreacion || new Date().toISOString(),
       new Date().toISOString(), // fechaActualizacion
       evento.recordatorio ? 1 : 0
@@ -774,16 +998,15 @@ async insertEvento(evento: any): Promise<boolean> {
 
     const result = await this.db.run(sql, values);
     const changes = result.changes?.changes || 0;
-    
     if (changes > 0) {
-      console.log('✅ Evento insertado correctamente en BD');
+      console.log(' 😊 Evento insertado correctamente en BD');
       return true;
     } else {
-      console.log('❌ No se insertó el evento en BD');
+      console.log('  No se insertó el evento en BD');
       return false;
     }
   } catch (error) {
-    console.error('❌ Error insertando evento en BD:', error);
+    console.error(' Error insertando evento en BD:', error);
     return false;
   }
 }
@@ -875,22 +1098,20 @@ async getEventoById(id: string): Promise<any> {
 async getAllEventos(): Promise<any[]> {
   try {
     if (!this.db || !this.isReady()) {
-      console.warn("⚠️ Base de datos no disponible");
+      console.warn("Base de datos no disponible");
       return [];
     }
 
     const result = await this.db.query("SELECT * FROM eventos ORDER BY fecha DESC");
-    
     if (result.values) {
       return result.values.map(evento => ({
         ...evento,
         recordatorio: evento.recordatorio === 1
       }));
     }
-    
     return [];
   } catch (error) {
-    console.error("❌ Error obteniendo eventos:", error);
+    console.error("Error obteniendo eventos:", error);
     return [];
   }
 }
@@ -937,37 +1158,33 @@ async getAllEventos(): Promise<any[]> {
 
 async deleteAnimal(id: string, razonEliminacion: string): Promise<boolean> {
   if (!this.db || !this.isReady()) {
-    console.warn("⚠️ Base de datos no disponible");
+    console.warn(" ▲ Base de datos no disponible");
     return false;
   }
 
   try {
     // TEMPORAL: Usar DELETE permanente hasta que se creen las columnas
-    console.log('🗑️ Eliminando permanentemente (temporal) animal:', id);
-    
+    console.log('  Eliminando permanentemente (temporal) animal:', id);
     const sql = "DELETE FROM animals WHERE id = ?";
     const result = await this.db.run(sql, [id]);
-    
     const changes = (result as any).changes?.changes || 0;
-    
     if (changes > 0) {
-      console.log(`✅ Animal ${id} eliminado permanentemente`);
+      console.log(`  Animal ${id} eliminado permanentemente`);
       return true;
     } else {
-      console.warn(`⚠️ No se encontró el animal ${id} para eliminar`);
+      console.warn(` ▲ No se encontró el animal ${id} para eliminar`);
       return false;
     }
   } catch (error) {
-    console.error("❌ Error eliminando animal:", error);
-    
+    console.error("✕ Error eliminando animal:", error);
     // Si falla por columnas faltantes, intentar recrear la BD
     try {
-      console.log('🔄 Intentando recrear BD por error de columnas...');
+      console.log('  Intentando recrear BD por error de columnas...');
       this.isInitialized = false;
       await this.initializeDatabase();
       return await this.deleteAnimal(id, razonEliminacion);
     } catch (retryError) {
-      console.error('❌ Error en reintento:', retryError);
+      console.error(' Error en reintento:', retryError);
       return false;
     }
   }
@@ -982,23 +1199,20 @@ async restoreAnimal(id: string): Promise<boolean> {
 
   try {
     const fechaActualizacion = new Date().toISOString();
-    
     const sql = `
-      UPDATE animals 
-      SET eliminado = 0, 
-          razonEliminacion = NULL, 
+      UPDATE animals
+      SET eliminado = 0,
+          razonEliminacion = NULL,
           fechaEliminacion = NULL,
           fechaActualizacion = ?
       WHERE id = ?
     `;
 
     const result = await this.db.run(sql, [fechaActualizacion, id]);
-    
-    // Corrección: Verificar cambios
     const changes = (result as any).changes?.changes || 0;
     return changes > 0;
   } catch (error) {
-    console.error("❌ Error restaurando animal:", error);
+    console.error("Error restaurando animal:", error);
     return false;
   }
 }
@@ -1007,16 +1221,15 @@ async updateAnimal(animal: Animal): Promise<boolean> {
   if (!this.db || !this.isReady()) return false;
 
   try {
-    // Primero obtener el animal actual para verificar si el SINIGA cambió
+    // Verificar si el SINIGA cambió
     const currentAnimal = await this.db.query(
-      "SELECT siniga FROM animals WHERE id = ?",
+      "SELECT siniga, madre, padre FROM animals WHERE id = ?",
       [animal.id]
     );
+    
+    const currentData = currentAnimal.values?.[0];
+    const sinigaChanged = currentData?.siniga !== animal.siniga;
 
-    const currentSiniga = currentAnimal.values?.[0]?.siniga;
-    const sinigaChanged = currentSiniga !== animal.siniga;
-
-    // Si el SINIGA cambió, verificar que no exista otro con el nuevo SINIGA
     if (sinigaChanged) {
       const existing = await this.db.query(
         "SELECT id FROM animals WHERE siniga = ? AND id != ?",
@@ -1030,34 +1243,92 @@ async updateAnimal(animal: Animal): Promise<boolean> {
     }
 
     const fechaActualizacion = new Date().toISOString();
-    
+
+    // ✅ CORREGIDO: Preservar madre y padre existentes si vienen vacíos
+    const madreFinal = animal.madre && animal.madre.trim() !== '' ? animal.madre : currentData?.madre || '';
+    const padreFinal = animal.padre && animal.padre.trim() !== '' ? animal.padre : currentData?.padre || '';
+
+    // ✅ ACTUALIZACIÓN COMPLETA preservando datos existentes
     const sql = `
       UPDATE animals SET
         siniga = ?, nombre = ?, madre = ?, padre = ?,
         fechaNacimiento = ?, edad = ?, sexo = ?, estado = ?,
-        peso = ?, observaciones = ?, fechaActualizacion = ?
+        peso = ?, observaciones = ?, fechaActualizacion = ?,
+        edadMeses = ?, activoReproduccion = ?, estadoReproductivo = ?,
+        ultimoParto = ?, diasPostParto = ?, ultimaMonta = ?,
+        ultimaInseminacion = ?, raza = ?
       WHERE id = ?
     `;
 
     const result = await this.db.run(sql, [
       animal.siniga,
       animal.nombre,
-      animal.madre,
-      animal.padre,
+      madreFinal, // ✅ Usamos el valor preservado
+      padreFinal, // ✅ Usamos el valor preservado
       animal.fechaNacimiento,
-      animal.edad,
+      animal.edad || '',
       animal.sexo,
       animal.estado,
       animal.peso,
-      animal.observaciones,
+      animal.observaciones || '',
       fechaActualizacion,
+      animal.edadMeses || 0,
+      animal.activoReproduccion ? 1 : 0,
+      animal.estadoReproductivo || '',
+      animal.ultimoParto || null,
+      animal.diasPostParto || 0,
+      animal.ultimaMonta || null,
+      animal.ultimaInseminacion || null,
+      animal.raza || 'Angus',
       animal.id
     ]);
 
-    const changes = (result as any).changes?.changes || 0;
+    const changes = result.changes?.changes || 0;
+    console.log('✅ Animal actualizado en BD, cambios:', changes);
     return changes > 0;
+
   } catch (error) {
     console.error("❌ Error actualizando animal:", error);
+    return false;
+  }
+}
+
+// En DatabaseService - método para resetear completamente
+async resetDatabase(): Promise<boolean> {
+  try {
+    console.log("🔄 Reseteando base de datos completamente...");
+    
+    if (this.db) {
+      await this.db.close();
+      this.db = null;
+    }
+
+    // Eliminar base de datos existente
+    await this.sqlite.deleteOldDatabases();
+    
+    // Limpiar conexiones
+    await this.cleanupConnections();
+
+    // Crear nueva conexión
+    this.db = await this.sqlite.createConnection(
+      this.DB_NAME,
+      false,
+      'no-encryption', 
+      this.DB_VERSION,
+      false
+    );
+
+    await this.db.open();
+    await this.setupDatabase();
+    
+    this.isInitialized = true;
+    console.log("✅ Base de datos reseteada exitosamente");
+    return true;
+
+  } catch (error) {
+    console.error("❌ Error reseteando BD:", error);
+    this.isInitialized = false;
+    this.db = null;
     return false;
   }
 }
@@ -1067,12 +1338,10 @@ async permanentDeleteAnimal(id: string): Promise<boolean> {
 
   try {
     const result = await this.db.run("DELETE FROM animals WHERE id = ?", [id]);
-    
-    // Corrección: Verificar cambios
     const changes = (result as any).changes?.changes || 0;
     return changes > 0;
   } catch (error) {
-    console.error("❌ Error eliminando permanentemente animal:", error);
+    console.error("Error eliminando permanentemente animal:", error);
     return false;
   }
 }
@@ -1088,15 +1357,46 @@ async getDeletedAnimals(): Promise<Animal[]> {
     );
     return result.values || [];
   } catch (error) {
-    console.error("❌ Error obteniendo animales eliminados:", error);
+    console.error("Error obteniendo animales eliminados:", error);
     return [];
   }
 
-  
+}
+
+async corregirEstadosMachosEnBD(): Promise<boolean> {
+  try {
+    console.log("🔧 Corrigiendo estados de machos en base de datos...");
+    
+    if (!this.db || !this.isReady()) {
+      console.error("BD no disponible");
+      return false;
+    }
+
+    // Actualizar directamente en la base de datos
+    const sql = `
+      UPDATE animals 
+      SET estadoReproductivo = 
+        CASE 
+          WHEN sexo = 'Macho' AND (edadMeses IS NULL OR edadMeses < 12) THEN 'Becerro'
+          WHEN sexo = 'Macho' THEN 'Semental'
+          ELSE estadoReproductivo
+        END,
+        fechaActualizacion = ?
+      WHERE sexo = 'Macho' AND (estadoReproductivo IS NULL OR estadoReproductivo = '')
+    `;
+
+    const result = await this.db.run(sql, [new Date().toISOString()]);
+    const changes = result.changes?.changes || 0;
+    
+    console.log(`✅ ${changes} machos corregidos en BD`);
+    return changes > 0;
+  } catch (error) {
+    console.error("❌ Error corrigiendo estados de machos:", error);
+    return false;
+  }
 
   
 }
-
 
 
 

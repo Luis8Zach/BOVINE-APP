@@ -1,9 +1,20 @@
+// ===== VARIABLES Y COLORES =====
+$primary-green: #2dd36f;
+$dark-green: #1e9c4f;
+$header-green: #A4C49A;
+$light-gray: #f8f9fa;
+$border-gray: #e9ecef;
+$text-dark: #2c3e50;
+$text-gray: #495057;
+$text-light: #6c757d;
+
+// ===== CONTENIDO PRINCIPAL =====
 .animals-content {
-  --background: linear-gradient(135deg, #2dd36f 0%, #1e9c4f 100%);
+  --background: linear-gradient(135deg, #{$primary-green} 0%, #{$dark-green} 100%);
   padding: 10px;
 }
 
-// Header mejorado
+// ===== HEADER =====
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -40,7 +51,7 @@
   }
 }
 
-// Contenedor principal
+// ===== CONTENEDOR PRINCIPAL =====
 .main-container {
   background: white;
   border-radius: 15px;
@@ -49,7 +60,7 @@
   margin: 5px 0;
 }
 
-// Sección de búsqueda
+// ===== SECCIÓN DE BÚSQUEDA =====
 .search-section {
   margin-bottom: 15px;
 
@@ -62,10 +73,10 @@
     .custom-searchbar {
       flex: 1;
       min-width: 200px;
-      --background: #f8f9fa;
+      --background: #{$light-gray};
       --border-radius: 12px;
       --box-shadow: none;
-      --color: #2c3e50;
+      --color: #{$text-dark};
     }
 
     .filter-button {
@@ -80,31 +91,11 @@
       height: 44px;
       min-width: 100px;
       font-weight: 600;
-      --color: white !important;
-      
-      .add-text {
-        color: white !important;
-        font-weight: 600 !important;
-      }
-
-      .add-icon {
-        color: white !important;
-      }
-
-      // Forzar el color del texto en todos los estados
-      ion-icon {
-        color: white !important;
-      }
-
-      // Asegurar que el texto sea visible
-      span {
-        color: white !important;
-      }
     }
   }
 }
 
-// Filtros de sexo
+// ===== FILTROS DE SEXO =====
 .sex-filters {
   display: flex;
   gap: 8px;
@@ -113,30 +104,40 @@
 
   .sex-filter-btn {
     --border-radius: 20px;
-    height: 36px;
-    font-size: 0.8rem;
+    height: 40px;
+    font-size: 0.85rem;
     font-weight: 500;
     flex: 1;
-    min-width: 120px;
+    min-width: 140px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .filter-icon {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      margin-right: 4px;
+    }
   }
 }
 
-// Tabla responsive
+// ===== TABLA =====
 .table-container {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid #e9ecef;
+  border: 1px solid $border-gray;
   background: white;
   overflow-x: auto;
 }
 
 .table-header {
   display: grid;
-  grid-template-columns: 70px 120px 100px 100px 110px 80px 100px 1fr;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  grid-template-columns: 70px 120px 100px 100px 100px 110px 80px 100px 110px 80px 120px;
+  background: linear-gradient(135deg, $light-gray 0%, $border-gray 100%);
   border-bottom: 2px solid #dee2e6;
-  min-width: 800px;
+  min-width: 1090px;
 
   .header-cell {
     padding: 12px 8px;
@@ -155,26 +156,30 @@
       border-right: none;
     }
   }
+
+  .header-actions {
+    min-width: 120px;
+  }
 }
 
 .table-body {
-  min-width: 800px;
+  min-width: 1090px;
 
   .table-row {
     display: grid;
-    grid-template-columns: 70px 120px 100px 100px 110px 80px 100px 1fr;
-    border-bottom: 1px solid #e9ecef;
+    grid-template-columns: 70px 120px 100px 100px 100px 110px 80px 100px 110px 80px 120px;
+    border-bottom: 1px solid $border-gray;
     transition: all 0.2s ease;
     cursor: pointer;
 
     &:hover {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e8 100%);
+      background: linear-gradient(135deg, $light-gray 0%, #e8f5e8 100%);
       transform: translateY(-1px);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     &:nth-child(even) {
-      background-color: #f8f9fa;
+      background-color: $light-gray;
     }
 
     &:last-child {
@@ -183,13 +188,13 @@
 
     .body-cell {
       padding: 12px 8px;
-      border-right: 1px solid #e9ecef;
+      border-right: 1px solid $border-gray;
       min-height: 50px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 0.8rem;
-      color: #495057;
+      color: $text-gray;
       font-weight: 500;
       text-align: center;
 
@@ -197,17 +202,9 @@
         border-right: none;
       }
 
-      &.obs-cell {
-        text-align: left;
-        justify-content: flex-start;
-        font-size: 0.75rem;
-        color: #6c757d;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .status-badge {
+      .status-badge,
+      .sex-badge,
+      .reprod-badge {
         font-size: 0.7rem;
         padding: 4px 8px;
         border-radius: 12px;
@@ -215,15 +212,42 @@
         text-transform: uppercase;
         letter-spacing: 0.3px;
       }
+
+      .no-data {
+        color: $text-light;
+        font-style: italic;
+      }
+    }
+
+    .body-actions {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      align-items: center;
+      min-width: 120px;
+
+      .action-btn {
+        --padding-start: 8px;
+        --padding-end: 8px;
+        --padding-top: 6px;
+        --padding-bottom: 6px;
+        margin: 0;
+        min-width: 40px;
+        height: 36px;
+
+        ion-icon {
+          font-size: 1.1rem;
+        }
+      }
     }
   }
 }
 
-// Mensaje sin resultados
+// ===== MENSAJE SIN RESULTADOS =====
 .no-results {
   text-align: center;
   padding: 40px 20px;
-  color: #6c757d;
+  color: $text-light;
 
   ion-icon {
     font-size: 3rem;
@@ -233,7 +257,7 @@
 
   h3 {
     margin: 0 0 8px 0;
-    color: #495057;
+    color: $text-gray;
     font-size: 1.1rem;
   }
 
@@ -244,9 +268,9 @@
   }
 }
 
-// Modal styles
+// ===== MODALES =====
 .modal-content {
-  --background: #f8f9fa;
+  --background: #{$light-gray};
 }
 
 .form-container {
@@ -262,22 +286,40 @@
 
   ion-label {
     font-weight: 600;
-    color: #495057;
+    color: $text-gray;
+  }
+
+  ion-input,
+  ion-textarea,
+  ion-select {
+    --color: #{$text-dark};
+    --placeholder-color: #{$text-light};
+    color: $text-dark;
+  }
+
+  ion-input[readonly] {
+    opacity: 0.8;
+    background-color: $light-gray;
+    border-radius: 8px;
+    padding-left: 8px;
   }
 }
 
 .modal-buttons {
   padding: 20px 0;
+  display: flex;
+  gap: 10px;
 
   ion-button {
     --border-radius: 12px;
     height: 50px;
     font-weight: 600;
     font-size: 1rem;
+    flex: 1;
   }
 }
 
-// ===== ESTILOS PERSONALIZADOS PARA ALERTAS =====
+// ===== ALERTAS PERSONALIZADAS =====
 :host ::ng-deep .custom-alert {
   --backdrop-opacity: 0.6;
   
@@ -290,7 +332,7 @@
   }
 
   .alert-head {
-    background: linear-gradient(135deg, #2dd36f 0%, #1e9c4f 100%) !important;
+    background: linear-gradient(135deg, #{$primary-green} 0%, #{$dark-green} 100%) !important;
     color: white !important;
     padding: 20px !important;
     text-align: center;
@@ -300,22 +342,22 @@
       font-size: 1.3rem !important;
       font-weight: 700 !important;
       margin: 0 !important;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
   }
 
   .alert-message {
     padding: 25px 20px !important;
     background: white !important;
-    color: #2c3e50 !important;
+    color: #{$text-dark} !important;
     font-size: 1rem !important;
     line-height: 1.5 !important;
     text-align: center;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid $border-gray;
   }
 
   .alert-button-group {
-    background: #f8f9fa !important;
+    background: #{$light-gray} !important;
     padding: 15px !important;
     display: flex !important;
     gap: 10px !important;
@@ -347,11 +389,6 @@
         background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
         box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4) !important;
       }
-
-      &:active {
-        transform: translateY(0) !important;
-        box-shadow: 0 2px 6px rgba(231, 76, 60, 0.3) !important;
-      }
     }
 
     &.alert-button-confirm {
@@ -363,65 +400,13 @@
         background: linear-gradient(135deg, #229954 0%, #1e8449 100%) !important;
         box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
       }
-
-      &:active {
-        transform: translateY(0) !important;
-        box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3) !important;
-      }
     }
   }
 }
 
-// Estilos para ion-select
-ion-select {
-  --color: #2c3e50 !important;
-  --placeholder-color: #6c757d !important;
-  color: #2c3e50 !important;
-}
+// ===== RESPONSIVE DESIGN =====
 
-ion-select-option {
-  --color: #2c3e50 !important;
-  color: #2c3e50 !important;
-}
-
-// Estilos específicos para el modal
-.modal-content {
-  ion-select {
-    --color: #2c3e50 !important;
-    --placeholder-color: #6c757d !important;
-    color: #2c3e50 !important;
-    
-    .select-text {
-      color: #2c3e50 !important;
-    }
-    
-    .select-placeholder {
-      color: #6c757d !important;
-    }
-  }
-  
-  ion-select-option {
-    --color: #2c3e50 !important;
-    color: #2c3e50 !important;
-  }
-  
-  // Asegurar que los inputs también tengan el color correcto
-  ion-input {
-    --color: #2c3e50 !important;
-    --placeholder-color: #6c757d !important;
-    color: #2c3e50 !important;
-  }
-  
-  ion-textarea {
-    --color: #2c3e50 !important;
-    --placeholder-color: #6c757d !important;
-    color: #2c3e50 !important;
-  }
-}
-
-// ===== RESPONSIVE BREAKPOINTS =====
-
-// Pantallas muy pequeñas (móviles en vertical)
+// Móviles pequeños (< 480px)
 @media (max-width: 480px) {
   .animals-content {
     padding: 5px;
@@ -440,22 +425,13 @@ ion-select-option {
     .header-right {
       font-size: 0.7rem;
       gap: 5px;
-
-      .logout-btn {
-        font-size: 1rem;
-      }
     }
   }
 
   .search-row {
     flex-direction: column;
-    gap: 8px;
 
-    .custom-searchbar {
-      width: 100%;
-      min-width: auto;
-    }
-
+    .custom-searchbar,
     .filter-button,
     .add-button {
       width: 100%;
@@ -463,17 +439,24 @@ ion-select-option {
     }
   }
 
-  .sex-filters {
-    .sex-filter-btn {
-      font-size: 0.75rem;
-      height: 32px;
-      min-width: 100px;
+  .sex-filters .sex-filter-btn {
+    font-size: 0.75rem;
+    height: 36px;
+    min-width: 120px;
+
+    .filter-icon {
+      width: 24px;
+      height: 24px;
     }
   }
 
+  .table-header,
+  .table-body {
+    min-width: 900px;
+  }
+
   .table-header {
-    grid-template-columns: 60px 100px 80px 80px 90px 70px 80px 1fr;
-    min-width: 640px;
+    grid-template-columns: 60px 100px 90px 90px 90px 100px 70px 90px 100px 70px 100px;
 
     .header-cell {
       padding: 10px 6px;
@@ -481,73 +464,44 @@ ion-select-option {
     }
   }
 
-  .table-body {
-    min-width: 640px;
+  .table-body .table-row {
+    grid-template-columns: 60px 100px 90px 90px 90px 100px 70px 90px 100px 70px 100px;
 
-    .table-row {
-      grid-template-columns: 60px 100px 80px 80px 90px 70px 80px 1fr;
+    .body-cell {
+      padding: 10px 6px;
+      font-size: 0.75rem;
+      min-height: 45px;
+    }
 
-      .body-cell {
-        padding: 10px 6px;
-        font-size: 0.75rem;
-        min-height: 45px;
+    .body-actions .action-btn {
+      min-width: 36px;
+      height: 32px;
 
-        &.obs-cell {
-          font-size: 0.7rem;
-        }
-
-        .status-badge {
-          font-size: 0.65rem;
-          padding: 3px 6px;
-        }
+      ion-icon {
+        font-size: 1rem;
       }
     }
   }
 
-  // Alertas responsive en móviles
   :host ::ng-deep .custom-alert {
     .alert-wrapper {
       max-width: 320px;
       margin: 20px;
     }
 
-    .alert-head {
-      padding: 15px !important;
-
-      h2 {
-        font-size: 1.1rem !important;
-      }
-    }
-
-    .alert-message {
-      padding: 20px 15px !important;
-      font-size: 0.9rem !important;
-    }
-
     .alert-button-group {
       flex-direction: column !important;
-      padding: 12px !important;
     }
 
     .alert-button {
       width: 100% !important;
-      min-width: auto !important;
-      margin-bottom: 8px !important;
-
-      &:last-child {
-        margin-bottom: 0 !important;
-      }
     }
   }
 }
 
-// Móviles en horizontal y tablets pequeñas
+// Tablets (481px - 768px)
 @media (min-width: 481px) and (max-width: 768px) {
   .animals-content {
-    padding: 15px;
-  }
-
-  .main-container {
     padding: 15px;
   }
 
@@ -558,56 +512,23 @@ ion-select-option {
 
     .header-right {
       font-size: 0.85rem;
-      gap: 10px;
     }
   }
 
-  .search-row {
-    .custom-searchbar {
-      max-width: 300px;
-    }
-
-    .filter-button,
-    .add-button {
-      min-width: 80px;
+  .sex-filters .sex-filter-btn {
+    .filter-icon {
+      width: 26px;
+      height: 26px;
     }
   }
 
-  .table-header {
-    grid-template-columns: 75px 130px 110px 110px 120px 85px 110px 1fr;
-    min-width: 740px;
-
-    .header-cell {
-      padding: 14px 10px;
-      font-size: 0.8rem;
-    }
-  }
-
+  .table-header,
   .table-body {
-    min-width: 740px;
-
-    .table-row {
-      grid-template-columns: 75px 130px 110px 110px 120px 85px 110px 1fr;
-
-      .body-cell {
-        padding: 13px 10px;
-        font-size: 0.85rem;
-        min-height: 52px;
-
-        &.obs-cell {
-          font-size: 0.8rem;
-        }
-
-        .status-badge {
-          font-size: 0.75rem;
-          padding: 5px 10px;
-        }
-      }
-    }
+    min-width: 1000px;
   }
 }
 
-// Tablets medianas
+// Tablets grandes (769px - 1024px)
 @media (min-width: 769px) and (max-width: 1024px) {
   .animals-content {
     padding: 20px;
@@ -616,59 +537,9 @@ ion-select-option {
   .main-container {
     padding: 20px;
   }
-
-  .header-content {
-    .header-left {
-      font-size: 1.4rem;
-    }
-
-    .header-right {
-      font-size: 0.9rem;
-      gap: 12px;
-    }
-  }
-
-  .search-row {
-    .custom-searchbar {
-      max-width: 350px;
-    }
-  }
-
-  .table-header {
-    grid-template-columns: 90px 150px 130px 130px 140px 100px 130px 1fr;
-    min-width: 870px;
-
-    .header-cell {
-      padding: 16px 12px;
-      font-size: 0.85rem;
-    }
-  }
-
-  .table-body {
-    min-width: 870px;
-
-    .table-row {
-      grid-template-columns: 90px 150px 130px 130px 140px 100px 130px 1fr;
-
-      .body-cell {
-        padding: 15px 12px;
-        font-size: 0.9rem;
-        min-height: 55px;
-
-        &.obs-cell {
-          font-size: 0.85rem;
-        }
-
-        .status-badge {
-          font-size: 0.8rem;
-          padding: 6px 12px;
-        }
-      }
-    }
-  }
 }
 
-// Tablets grandes y desktop
+// Desktop (> 1024px)
 @media (min-width: 1025px) {
   .animals-content {
     padding: 30px;
@@ -679,106 +550,8 @@ ion-select-option {
     margin: 20px 0;
   }
 
-  .header-content {
-    .header-left {
-      font-size: 1.5rem;
-    }
-
-    .header-right {
-      font-size: 0.9rem;
-      gap: 15px;
-    }
-  }
-
-  .search-row {
-    .custom-searchbar {
-      max-width: 400px;
-    }
-  }
-
-  .table-header {
-    grid-template-columns: 100px 160px 140px 140px 150px 110px 140px 1fr;
-    min-width: auto;
-
-    .header-cell {
-      padding: 18px 15px;
-      font-size: 0.9rem;
-    }
-  }
-
+  .table-header,
   .table-body {
     min-width: auto;
-
-    .table-row {
-      grid-template-columns: 100px 160px 140px 140px 150px 110px 140px 1fr;
-
-      .body-cell {
-        padding: 18px 15px;
-        font-size: 0.9rem;
-        min-height: 60px;
-
-        &.obs-cell {
-          font-size: 0.85rem;
-        }
-
-        .status-badge {
-          font-size: 0.8rem;
-          padding: 6px 12px;
-        }
-      }
-    }
-  }
-}
-
-// Pantallas extra grandes
-@media (min-width: 1440px) {
-  .table-header {
-    grid-template-columns: 120px 180px 160px 160px 170px 130px 160px 1fr;
-  }
-
-  .table-body .table-row {
-    grid-template-columns: 120px 180px 160px 160px 170px 130px 160px 1fr;
-  }
-}
-
-//csss para eliminar anaimales 
-// En tab2.page.scss
-.action-cell {
-  width: 120px;
-  min-width: 120px;
-  text-align: center;
-}
-
-.table-row .action-cell {
-  display: flex;
-  gap: 4px;
-  justify-content: center;
-  align-items: center;
-}
-
-ion-button {
-  --padding-start: 8px;
-  --padding-end: 8px;
-  --padding-top: 4px;
-  --padding-bottom: 4px;
-  margin: 0;
-}
-
-ion-input[readonly] {
-  opacity: 0.8;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  padding-left: 8px;
-  
-  &.item-has-focus {
-    background-color: #e8f4ff;
-  }
-}
-
-// Estilo para indicar que es generado automáticamente
-ion-item[readonly] {
-  ion-note {
-    font-style: italic;
-    color: #666;
   }
 }

@@ -1,9 +1,10 @@
 <ion-header [translucent]="true">
-  <ion-toolbar color="success">
+  <ion-toolbar style="--background: #A4C49A;">
     <ion-title>
       <div class="header-content">
         <div class="header-left">
-          <div class="app-logo">AGRODATA</div>
+          <!-- Nombre actualizado de AGRODATA a BOVINET -->
+          <div class="app-logo">BOVINET</div>
         </div>
         <div class="header-right">
           <div class="ranch-info">
@@ -16,7 +17,7 @@
     </ion-title>
   </ion-toolbar>
 
-  <!-- Notificaciones emergentes - DENTRO del ion-header -->
+  <!-- Notificaciones movidas al tab de Inicio según requerimientos -->
   @if (mostrarNotificaciones && notificacionesHoy.length > 0) {
     <ion-toolbar color="warning" class="notification-bar">
       <ion-buttons slot="start">
@@ -39,7 +40,6 @@
 
 <ion-content [fullscreen]="true" class="dashboard-content">
 
-  <!-- Mostrar mientras la DB se inicializa -->
   @if (cargandoDatos) {
     <div class="spinner-container">
       <ion-spinner name="crescent"></ion-spinner>
@@ -47,7 +47,6 @@
     </div>
   }
 
-  <!-- Mensaje si se usa base de datos mock -->
   @if (modoMock && !cargandoDatos) {
     <div class="alerta-mock">
       <ion-icon name="warning-outline" color="warning"></ion-icon>
@@ -55,7 +54,6 @@
     </div>
   }
 
-  <!-- Contenido principal solo si DB lista -->
   @if (!cargandoDatos) {
     <div class="main-container">
       
@@ -98,46 +96,60 @@
         </ion-card>
       </div>
 
-      <!-- Sección de próximos eventos -->
+      <!-- Rediseño completo de la sección de eventos con cards modernos -->
       <div class="events-section">
         <div class="events-header">
-          <ion-icon name="warning-outline" class="events-icon"></ion-icon>
-          <h2 class="events-title">Próximos Eventos</h2>
+          <div class="header-left">
+            <ion-icon name="calendar" class="events-icon"></ion-icon>
+            <h2 class="events-title">Próximos Eventos</h2>
+          </div>
+          @if (proximosEventos.length > 0) {
+            <ion-badge class="events-count">{{ proximosEventos.length }}</ion-badge>
+          }
         </div>
 
         @if (proximosEventos.length > 0) {
-          @for (evento of proximosEventos; track evento.id) {
-            <div class="event-item">
-              <div class="event-indicator" [style.background-color]="getEventColor(evento.tipo)">
-                <ion-icon [name]="getEventIcon(evento.tipo)"></ion-icon>
-              </div>
-              
-              <div class="event-content">
-                <div class="event-main">
-                  <h3 class="event-title">{{ evento.animalNombre }} ({{ evento.animalId }}) - {{ evento.tipo }}</h3>
-                  <p class="event-description">{{ evento.notas }}</p>
+          <div class="events-grid">
+            @for (evento of proximosEventos; track evento.id) {
+              <ion-card class="event-card" [attr.data-tipo]="evento.tipo">
+                <div class="event-card-header" [style.background]="getEventColor(evento.tipo)">
+                  <div class="event-icon-wrapper">
+                    <ion-icon [name]="getEventIcon(evento.tipo)" class="event-type-icon"></ion-icon>
+                  </div>
+                  <div class="event-type-label">{{ evento.tipo }}</div>
                 </div>
-              </div>
-
-              <div class="event-date-status">
-                <div class="event-date">{{ formatShortDate(evento.fecha) }}</div>
-                <ion-badge [color]="getEstadoColor(evento.estado)" class="event-status">
-                  {{ evento.estado }}
-                </ion-badge>
-              </div>
-            </div>
-          }
+                
+                <ion-card-content class="event-card-content">
+                  <div class="event-animal-info">
+                    <h3 class="event-animal-name">{{ evento.animalNombre }}</h3>
+                    <span class="event-animal-id">ID: {{ evento.animalId }}</span>
+                  </div>
+                  
+                  <p class="event-description">{{ evento.notas }}</p>
+                  
+                  <div class="event-footer">
+                    <div class="event-date-wrapper">
+                      <ion-icon name="time-outline" class="date-icon"></ion-icon>
+                      <span class="event-date">{{ formatShortDate(evento.fecha) }}</span>
+                    </div>
+                    <ion-badge [color]="getEstadoColor(evento.estado)" class="event-status">
+                      {{ evento.estado }}
+                    </ion-badge>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            }
+          </div>
         } @else {
           <div class="no-events-message">
-            <ion-icon name="calendar-outline"></ion-icon>
-            <p>No hay eventos próximos</p>
+            <ion-icon name="calendar-outline" class="no-events-icon"></ion-icon>
+            <p class="no-events-text">No hay eventos próximos</p>
           </div>
         }
       </div>
     </div>
   }
 
-  <!-- Modal de notificaciones - DENTRO del ion-content -->
   <ion-modal [isOpen]="modalNotificacionesOpen" (didDismiss)="cerrarModalNotificaciones()">
     <ng-template>
       <ion-header>

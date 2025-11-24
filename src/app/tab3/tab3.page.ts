@@ -1290,56 +1290,103 @@ debugMachos() {
 
   // El resto de tus métodos existentes (sin cambios)
   private createLocalDate(year: number, month: number, day: number): Date {
-    return new Date(year, month, day, 12, 0, 0, 0);
-  }
+  // Crear fecha en UTC para evitar desplazamientos
+  return new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
+}
 
   private getLocalDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
+  // Usar UTC para evitar problemas de zona horaria
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
   private isSameDate(date1: Date, date2: Date): boolean {
-    return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate()
-    );
+  return (
+    date1.getUTCFullYear() === date2.getUTCFullYear() &&
+    date1.getUTCMonth() === date2.getUTCMonth() &&
+    date1.getUTCDate() === date2.getUTCDate()
+  );
+}
+
+// CORREGIR: Método formatDate para mostrar correctamente
+formatDate(dateString: string): string {
+  if (!dateString) return "";
+  
+  // Usar UTC para evitar problemas de zona horaria
+  const date = new Date(dateString + 'T12:00:00Z'); // Forzar UTC
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+  // Usar fechas UTC para comparación
+  const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  const tomorrowUTC = new Date(Date.UTC(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate()));
+  const dateUTC = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+
+  if (this.isSameDate(dateUTC, todayUTC)) {
+    return "Hoy";
+  } else if (this.isSameDate(dateUTC, tomorrowUTC)) {
+    return "Mañana";
+  } else {
+    return date.toLocaleDateString("es-ES", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      timeZone: 'UTC' // Forzar zona horaria UTC
+    });
   }
+}
 
-  generateCalendar() {
-    const firstDay = this.createLocalDate(this.currentYear, this.currentMonth, 1);
-    const lastDay = this.createLocalDate(this.currentYear, this.currentMonth + 1, 0);
+// CORREGIR: Método para verificar si un evento está vencido
+isEventOverdue(evento: Evento): boolean {
+  const today = new Date();
+  const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  const eventDate = new Date(evento.fecha + 'T12:00:00Z');
+  const eventDateUTC = new Date(Date.UTC(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate()));
+  
+  return eventDateUTC < todayUTC && evento.estado !== "Realizado";
+}
 
-    const startDate = this.createLocalDate(this.currentYear, this.currentMonth, 1);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+// CORREGIR: En el método generarCalendar - usar UTC
+generateCalendar() {
+  const firstDay = this.createLocalDate(this.currentYear, this.currentMonth, 1);
+  const lastDay = this.createLocalDate(this.currentYear, this.currentMonth + 1, 0);
 
-    const endDate = this.createLocalDate(this.currentYear, this.currentMonth + 1, 0);
-    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+  const startDate = this.createLocalDate(this.currentYear, this.currentMonth, 1);
+  startDate.setUTCDate(startDate.getUTCDate() - firstDay.getUTCDay());
 
-    this.calendarDays = [];
-    const currentDate = new Date(startDate);
+  const endDate = this.createLocalDate(this.currentYear, this.currentMonth + 1, 0);
+  endDate.setUTCDate(endDate.getUTCDate() + (6 - lastDay.getUTCDay()));
 
-    while (currentDate <= endDate) {
-      const dateString = this.getLocalDateString(currentDate);
-      const dayEvents = this.eventos.filter((evento) => evento.fecha === dateString);
-      const today = new Date();
-      const isToday = this.isSameDate(currentDate, today);
-      const isCurrentMonth = currentDate.getMonth() === this.currentMonth;
+  this.calendarDays = [];
+  const currentDate = new Date(startDate);
 
-      this.calendarDays.push({
-        date: new Date(currentDate),
-        day: currentDate.getDate(),
-        isCurrentMonth,
-        isToday,
-        events: dayEvents,
-        dateString: dateString,
-      });
+  while (currentDate <= endDate) {
+    const dateString = this.getLocalDateString(currentDate);
+    const dayEvents = this.eventos.filter((evento) => evento.fecha === dateString);
+    
+    const today = new Date();
+    const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const currentUTC = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()));
+    
+    const isToday = this.isSameDate(currentUTC, todayUTC);
+    const isCurrentMonth = currentDate.getUTCMonth() === this.currentMonth;
 
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
+    this.calendarDays.push({
+      date: new Date(currentDate),
+      day: currentDate.getUTCDate(),
+      isCurrentMonth,
+      isToday,
+      events: dayEvents,
+      dateString: dateString,
+    });
+
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
   }
+}
+
 
   previousMonth() {
     if (this.currentMonth === 0) {
@@ -1610,30 +1657,7 @@ async markAsCompleted(evento: any) {
     }
   }
 
-  formatDate(dateString: string): string {
-    const date = new Date(dateString + "T12:00:00");
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    if (this.isSameDate(date, today)) {
-      return "Hoy";
-    } else if (this.isSameDate(date, tomorrow)) {
-      return "Mañana";
-    } else {
-      return date.toLocaleDateString("es-ES", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      });
-    }
-  }
-
-  isEventOverdue(evento: Evento): boolean {
-    const today = new Date();
-    const eventDate = new Date(evento.fecha + "T12:00:00");
-    return eventDate < today && evento.estado !== "Realizado";
-  }
+ 
 
   // Métodos para protocolos (agregar estos también)
   private async generarEventosProtocoloParto(animal: Animal, fechaParto: string) {

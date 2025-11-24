@@ -121,9 +121,32 @@ export class Tab1Page implements OnInit, OnDestroy {
       this.totalAnimales = animals.length;
       this.totalHembras = animals.filter(a => a.sexo === 'Hembra').length;
       this.totalMachos = animals.filter(a => a.sexo === 'Macho').length;
-      this.reproductores = animals.filter(a => 
-        a.sexo === 'Macho' || a.sexo === 'Hembra' && a.fechaNacimiento && this.calculateAge(a.fechaNacimiento) >= 2
-      ).length;
+      this.reproductores = animals.filter(animal => {
+  // Verificar que tenga fecha de nacimiento
+  if (!animal.fechaNacimiento) return false;
+  
+  // Calcular edad en años
+  const edad = this.calculateAgeInYears(animal.fechaNacimiento);
+  
+  // Verificar edad reproductiva (2 años o más para ambos sexos)
+  if (edad < 2) return false;
+  
+  // Verificar que esté activo para reproducción
+  if (animal.activoReproduccion === false) return false;
+  
+  // Para machos: deben ser sementales (no becerros)
+  if (animal.sexo === 'Macho') {
+    return animal.estadoReproductivo === 'Semental';
+  }
+  
+  // Para hembras: no deben estar secas o en estado no reproductivo
+  if (animal.sexo === 'Hembra') {
+    const estadosNoReproductivos = ['Seca', 'Vacia', 'Becerro'];
+    return !estadosNoReproductivos.includes(animal.estadoReproductivo || '');
+  }
+  
+  return false;
+}).length;
 
       // 5. Procesar próximos eventos (de ambas fuentes)
       this.proximosEventos = this.processEventos(todosLosEventos);
@@ -144,6 +167,27 @@ export class Tab1Page implements OnInit, OnDestroy {
       this.cargandoDatos = false;
     }
   }
+
+  // Método para calcular edad en años (más preciso)
+private calculateAgeInYears(fechaNacimiento: string): number {
+  if (!fechaNacimiento) return 0;
+  
+  try {
+    const birth = new Date(fechaNacimiento);
+    const today = new Date();
+    
+    if (isNaN(birth.getTime())) return 0;
+    
+    const diffTime = Math.abs(today.getTime() - birth.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const ageYears = diffDays / 365.25;
+    
+    return Math.floor(ageYears * 100) / 100; // Redondear a 2 decimales
+  } catch (error) {
+    console.error('Error calculando edad en años:', error);
+    return 0;
+  }
+}
 
   // Método para cargar notificaciones del día
   private async cargarNotificacionesHoy(eventos: any[]) {

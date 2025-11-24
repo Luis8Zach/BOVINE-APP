@@ -1002,8 +1002,8 @@ private corregirEstadoMachos(animal: Animal): string {
 
   const edadMeses = animal.edadMeses || 0;
   
-  // Machos menores de 12 meses = Becerro
-  if (edadMeses < 12) {
+  // Machos menores de 24 meses = Becerro
+  if (edadMeses < 24) {
     return 'Becerro';
   }
   
